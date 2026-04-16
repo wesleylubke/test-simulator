@@ -3,8 +3,15 @@ FROM php:8.2-apache
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
+    zip \
     libzip-dev \
+    autoconf \
+    g++ \
+    make \
+    pkg-config \
     && docker-php-ext-install zip \
+    && pecl install grpc protobuf \
+    && docker-php-ext-enable grpc protobuf \
     && a2enmod rewrite \
     && rm -rf /var/lib/apt/lists/*
 
