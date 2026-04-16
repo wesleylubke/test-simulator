@@ -4,44 +4,33 @@ on:
   push:
     branches: [ "main" ]
 
+concurrency:
+  group: simulator-deploy
+  cancel-in-progress: true
+
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, simulator]
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build image
+      - name: Sync project to deploy directory
         run: |
-          docker build -t simulator:${{ github.sha }} .
+          mkdir -p /opt/test-simulator
+          rsync -av --delete \
+            --exclude ".git" \
+            --exclude ".github" \
+            ./ /opt/test-simulator/
 
-      - name: Save image
+      - name: Build and start container
+        working-directory: /opt/test-simulator
         run: |
-          docker save simulator:${{ github.sha }} > simulator.tar
+          docker compose down || true
+          docker compose up -d --build
 
-      - name: Copy to VM
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.VM_HOST }}
-          username: ${{ secrets.VM_USER }}
-          key: ${{ secrets.VM_SSH_KEY }}
-          source: "simulator.tar"
-          target: "/opt/test-simulator"
-
-      - name: Deploy on VM
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VM_HOST }}
-          username: ${{ secrets.VM_USER }}
-          key: ${{ secrets.VM_SSH_KEY }}
-          script: |
-            cd /opt/test-simulator
-            docker load < simulator.tar
-            docker stop test_simulator || true
-            docker rm test_simulator || true
-            docker run -d \
-              --name test_simulator \
-              --restart always \
-              -p 127.0.0.1:8081:80 \
-              simulator:${{ github.sha }}
+      - name: Verify container
+        run: |
+          docker ps
+          curl -I http://127.0.0.1:8081 || true
