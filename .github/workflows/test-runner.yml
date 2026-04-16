@@ -1,4 +1,4 @@
-name: Test Runner Docker
+name: Test Runner
 
 on:
   workflow_dispatch:
@@ -8,6 +8,8 @@ jobs:
     runs-on: [self-hosted, linux]
 
     steps:
-      - name: Test Docker
+      - name: Test environment
         run: |
-          docker ps
+          echo "Runner funcionando"
+          whoami
+          hostname
