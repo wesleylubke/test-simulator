@@ -1,6 +1,7 @@
 .git
 .github
-node_modules
-vendor
 .env
 .env.deploy
+node_modules
+vendor
+README.md

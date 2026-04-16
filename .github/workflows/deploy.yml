@@ -10,28 +10,33 @@ concurrency:
 
 jobs:
   deploy:
-    runs-on: [self-hosted, linux, simulator]
+    runs-on: [self-hosted, linux]
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Sync project to deploy directory
+      - name: Ensure directory
         run: |
-          mkdir -p /opt/test-simulator
-          rsync -av --delete \
-            --exclude ".git" \
-            --exclude ".github" \
-            ./ /opt/test-simulator/
+          sudo mkdir -p /opt/test-simulator
+          sudo chown -R wclubke:wclubke /opt/test-simulator
 
-      - name: Build and start container
+      - name: Sync project
+        run: |
+          rsync -av --delete             --exclude ".git"             --exclude ".github"             --exclude ".env"             --exclude ".env.deploy"             ./ /opt/test-simulator/
+
+      - name: Deploy container
         working-directory: /opt/test-simulator
         run: |
           docker compose down --remove-orphans || true
           docker rm -f test_simulator || true
           docker compose up -d --build
 
-      - name: Verify container
+      - name: Healthcheck
         run: |
-          docker ps
-          curl -I http://127.0.0.1:8081 || true
+          sleep 5
+          curl -f http://127.0.0.1:8081 || exit 1
+
+      - name: Logs on failure
+        if: failure()
+        run: docker logs test_simulator || true
