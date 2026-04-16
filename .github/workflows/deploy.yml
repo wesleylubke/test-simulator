@@ -23,7 +23,12 @@ jobs:
 
       - name: Sync project
         run: |
-          rsync -av --delete             --exclude ".git"             --exclude ".github"             --exclude ".env"             --exclude ".env.deploy"             ./ /opt/test-simulator/
+          rsync -av --delete \
+            --exclude ".git" \
+            --exclude ".github" \
+            --exclude ".env" \
+            --exclude ".env.deploy" \
+            ./ /opt/test-simulator/
 
       - name: Deploy container
         working-directory: /opt/test-simulator
