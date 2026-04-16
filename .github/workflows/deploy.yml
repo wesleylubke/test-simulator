@@ -27,7 +27,8 @@ jobs:
       - name: Build and start container
         working-directory: /opt/test-simulator
         run: |
-          docker compose down || true
+          docker compose down --remove-orphans || true
+          docker rm -f test_simulator || true
           docker compose up -d --build
 
       - name: Verify container
