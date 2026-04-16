@@ -1,8 +1,6 @@
-version: "3.9"
-
 services:
   simulator:
-    build: .
+    image: southamerica-east1-docker.pkg.dev/SEU_PROJETO/test-simulator/web:${APP_VERSION}
     container_name: test_simulator
     restart: always
     ports:
