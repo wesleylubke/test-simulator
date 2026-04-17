@@ -5,3 +5,8 @@ services:
     restart: always
     ports:
       - "127.0.0.1:8081:80"
+    environment:
+      GOOGLE_CLOUD_PROJECT: "fluent-night-466117-d2"
+      GOOGLE_APPLICATION_CREDENTIALS: "/var/www/html/credentials.json"
+    volumes:
+      - /opt/test-simulator/app/credentials.json:/var/www/html/credentials.json:ro

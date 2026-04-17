@@ -5,3 +5,4 @@ node_modules/
 .DS_Store
 app/uploads/*
 !app/uploads/.gitkeep
+app/credentials.json
