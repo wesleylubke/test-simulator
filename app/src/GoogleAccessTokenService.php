@@ -1,8 +1,9 @@
 <?php
+declare(strict_types=1);
 
 namespace App;
 
-class GoogleAccessTokenService
+final class GoogleAccessTokenService
 {
     private string $credentialsPath;
 
@@ -13,17 +14,49 @@ class GoogleAccessTokenService
 
     public function getAccessToken(): string
     {
-        $credentials = json_decode(file_get_contents($this->credentialsPath), true);
+        if ($this->credentialsPath === '') {
+            throw new \Exception('GOOGLE_APPLICATION_CREDENTIALS não definido.');
+        }
 
-        $clientEmail = $credentials['client_email'];
-        $privateKey = $credentials['private_key'];
-        $tokenUri = $credentials['token_uri'];
+        if (!file_exists($this->credentialsPath)) {
+            throw new \Exception('Arquivo de credenciais não encontrado: ' . $this->credentialsPath);
+        }
+
+        if (!is_file($this->credentialsPath)) {
+            throw new \Exception('O caminho de credenciais não é um arquivo: ' . $this->credentialsPath);
+        }
+
+        $raw = file_get_contents($this->credentialsPath);
+        if ($raw === false) {
+            throw new \Exception('Não foi possível ler o arquivo de credenciais: ' . $this->credentialsPath);
+        }
+
+        $credentials = json_decode($raw, true);
+        if (!is_array($credentials)) {
+            throw new \Exception('JSON de credenciais inválido.');
+        }
+
+        $clientEmail = $credentials['client_email'] ?? null;
+        $privateKey = $credentials['private_key'] ?? null;
+        $tokenUri = $credentials['token_uri'] ?? null;
+
+        if (!is_string($clientEmail) || $clientEmail === '') {
+            throw new \Exception('client_email ausente no credentials.json');
+        }
+
+        if (!is_string($privateKey) || $privateKey === '') {
+            throw new \Exception('private_key ausente no credentials.json');
+        }
+
+        if (!is_string($tokenUri) || $tokenUri === '') {
+            throw new \Exception('token_uri ausente no credentials.json');
+        }
 
         $now = time();
 
         $header = [
             'alg' => 'RS256',
-            'typ' => 'JWT'
+            'typ' => 'JWT',
         ];
 
         $payload = [
@@ -31,15 +64,14 @@ class GoogleAccessTokenService
             'scope' => 'https://www.googleapis.com/auth/datastore',
             'aud' => $tokenUri,
             'exp' => $now + 3600,
-            'iat' => $now
+            'iat' => $now,
         ];
 
         $jwt = $this->encodeJwt($header, $payload, $privateKey);
-
         $response = $this->requestAccessToken($tokenUri, $jwt);
 
-        if (!isset($response['access_token'])) {
-            throw new \Exception('Erro ao obter access token: ' . json_encode($response));
+        if (!isset($response['access_token']) || !is_string($response['access_token'])) {
+            throw new \Exception('Erro ao obter access token: ' . json_encode($response, JSON_UNESCAPED_UNICODE));
         }
 
         return $response['access_token'];
@@ -49,10 +81,12 @@ class GoogleAccessTokenService
     {
         $base64UrlHeader = $this->base64UrlEncode(json_encode($header));
         $base64UrlPayload = $this->base64UrlEncode(json_encode($payload));
-
         $signatureInput = $base64UrlHeader . '.' . $base64UrlPayload;
 
-        openssl_sign($signatureInput, $signature, $privateKey, 'sha256');
+        $success = openssl_sign($signatureInput, $signature, $privateKey, OPENSSL_ALGO_SHA256);
+        if ($success !== true) {
+            throw new \Exception('Falha ao assinar JWT com openssl_sign.');
+        }
 
         $base64UrlSignature = $this->base64UrlEncode($signature);
 
@@ -68,7 +102,7 @@ class GoogleAccessTokenService
     {
         $postFields = http_build_query([
             'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-            'assertion' => $jwt
+            'assertion' => $jwt,
         ]);
 
         $ch = curl_init($tokenUri);
@@ -78,8 +112,8 @@ class GoogleAccessTokenService
             CURLOPT_POST => true,
             CURLOPT_POSTFIELDS => $postFields,
             CURLOPT_HTTPHEADER => [
-                'Content-Type: application/x-www-form-urlencoded'
-            ]
+                'Content-Type: application/x-www-form-urlencoded',
+            ],
         ]);
 
         $response = curl_exec($ch);
@@ -88,6 +122,8 @@ class GoogleAccessTokenService
             throw new \Exception('Erro CURL: ' . curl_error($ch));
         }
 
-        return json_decode($response, true);
+        $decoded = json_decode($response, true);
+
+        return is_array($decoded) ? $decoded : [];
     }
 }
