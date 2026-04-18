@@ -1,8 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/ValidationException.php';
-require_once __DIR__ . '/ParsedExam.php';
+namespace App;
 
 final class CsvExamParser
 {
