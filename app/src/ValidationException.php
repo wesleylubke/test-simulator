@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
-final class ValidationException extends RuntimeException
+namespace App;
+
+final class ValidationException extends \RuntimeException
 {
 }
