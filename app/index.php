@@ -1,7 +1,10 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/src/CsvExamParser.php';
+require_once __DIR__ . '/vendor/autoload.php';
+
+use App\CsvExamParser;
+use App\ValidationException;
 
 $parser = new CsvExamParser();
 $parsedExam = null;
