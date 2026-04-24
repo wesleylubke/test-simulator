@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App;
@@ -135,8 +136,13 @@ final class FirestoreRestRepository
         }
 
         if (is_array($value)) {
+            if ($value === []) {
+                return ['mapValue' => ['fields' => new \stdClass()]];
+            }
+
             if ($this->isAssociativeArray($value)) {
                 $fields = [];
+
                 foreach ($value as $key => $item) {
                     $fields[(string) $key] = $this->toFirestoreValue($item);
                 }
@@ -145,6 +151,7 @@ final class FirestoreRestRepository
             }
 
             $values = [];
+
             foreach ($value as $item) {
                 $values[] = $this->toFirestoreValue($item);
             }
