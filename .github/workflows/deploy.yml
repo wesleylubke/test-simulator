@@ -28,6 +28,7 @@ jobs:
             --exclude ".github" \
             --exclude ".env" \
             --exclude ".env.deploy" \
+            --exclude "app/credentials.json" \
             ./ /opt/test-simulator/
 
       - name: Deploy container
