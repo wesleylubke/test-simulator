@@ -316,4 +316,66 @@ public function updateExamTitle(string $examId, string $title): void
     $this->request('PATCH', $url, $payload);
 }
 
+public function listQuestions(string $examId): array
+{
+    $url = $this->baseUrl . '/exams/' . rawurlencode($examId) . '/questions?pageSize=200';
+
+    $response = $this->request('GET', $url);
+
+    $questions = [];
+
+    foreach (($response['documents'] ?? []) as $document) {
+        $fields = $document['fields'] ?? [];
+        $nameParts = explode('/', (string) ($document['name'] ?? ''));
+        $id = end($nameParts);
+
+        $questions[] = [
+            'id' => $id,
+            'question_id' => $fields['question_id']['stringValue'] ?? $id,
+            'statement' => $fields['statement']['stringValue'] ?? '',
+            'type' => $fields['type']['stringValue'] ?? '',
+            'options' => [
+                'A' => $fields['options']['mapValue']['fields']['A']['stringValue'] ?? '',
+                'B' => $fields['options']['mapValue']['fields']['B']['stringValue'] ?? '',
+                'C' => $fields['options']['mapValue']['fields']['C']['stringValue'] ?? '',
+                'D' => $fields['options']['mapValue']['fields']['D']['stringValue'] ?? '',
+            ],
+            'correct_answer' => $fields['correct_answer']['stringValue'] ?? '',
+            'explanation' => $fields['explanation']['stringValue'] ?? '',
+            'order_index' => (int) ($fields['order_index']['integerValue'] ?? 0),
+        ];
+    }
+
+    usort(
+        $questions,
+        static fn (array $a, array $b): int => ((int) $a['order_index']) <=> ((int) $b['order_index'])
+    );
+
+    return $questions;
+}
+
+public function updateQuestion(string $examId, string $questionId, array $question): void
+{
+    $url = $this->baseUrl
+        . '/exams/'
+        . rawurlencode($examId)
+        . '/questions/'
+        . rawurlencode($questionId)
+        . '?updateMask.fieldPaths=statement'
+        . '&updateMask.fieldPaths=options'
+        . '&updateMask.fieldPaths=correct_answer'
+        . '&updateMask.fieldPaths=explanation';
+
+    $payload = [
+        'fields' => [
+            'statement' => ['stringValue' => (string) $question['statement']],
+            'options' => $this->toFirestoreValue((array) $question['options']),
+            'correct_answer' => ['stringValue' => (string) $question['correct_answer']],
+            'explanation' => ['stringValue' => (string) $question['explanation']],
+        ],
+    ];
+
+    $this->request('PATCH', $url, $payload);
+}
+
 }
