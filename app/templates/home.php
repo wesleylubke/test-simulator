@@ -175,7 +175,7 @@ include __DIR__ . '/layout/header.php';
                     </button>
 
                     <?php if ($folderId !== 'no-folder'): ?>
-                        <div class="buttons ml-3">
+                        <div class="folder-actions">
 
                             <!-- EDITAR -->
                             <button
@@ -187,7 +187,9 @@ include __DIR__ . '/layout/header.php';
                             </button>
 
                             <!-- EXCLUIR -->
-                            <form method="post" onsubmit="return confirm('Excluir esta pasta? As provas ficarão sem pasta.');">
+                            <form method="post" class="folder-action-form"
+                                onsubmit="return confirm('Excluir esta pasta? As provas ficarão sem pasta.');">
+
                                 <input type="hidden" name="action" value="delete_folder">
                                 <input type="hidden" name="folder_id" value="<?= htmlspecialchars($folderId) ?>">
 

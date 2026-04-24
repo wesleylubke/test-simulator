@@ -53,6 +53,16 @@ strong,
     font-size: 0.95rem;
 }
 
+.folder-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.folder-action-form {
+    margin: 0;
+}
+
 .folder-toggle {
     background: transparent !important;
     border: none !important;
