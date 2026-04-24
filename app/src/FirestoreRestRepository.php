@@ -200,6 +200,8 @@ final class FirestoreRestRepository
                 'total_questions' => (int) ($fields['total_questions']['integerValue'] ?? 0),
                 'status' => $fields['status']['stringValue'] ?? '',
                 'created_at' => $fields['created_at']['timestampValue'] ?? '',
+                'folder_id' => $fields['folder_id']['stringValue'] ?? '',
+                'folder_name' => $fields['folder_name']['stringValue'] ?? 'Sem pasta',
             ];
         }
 
@@ -250,132 +252,203 @@ final class FirestoreRestRepository
     }
 
     public function listAttempts(): array
-{
-    $url = $this->baseUrl . '/attempts?pageSize=50';
+    {
+        $url = $this->baseUrl . '/attempts?pageSize=50';
 
-    $response = $this->request('GET', $url);
+        $response = $this->request('GET', $url);
 
-    $attempts = [];
+        $attempts = [];
 
-    foreach (($response['documents'] ?? []) as $document) {
-        $fields = $document['fields'] ?? [];
-        $nameParts = explode('/', (string) ($document['name'] ?? ''));
-        $id = end($nameParts);
+        foreach (($response['documents'] ?? []) as $document) {
+            $fields = $document['fields'] ?? [];
+            $nameParts = explode('/', (string) ($document['name'] ?? ''));
+            $id = end($nameParts);
 
-        $attempts[] = [
-            'id' => $id,
-            'exam_id' => $fields['exam_id']['stringValue'] ?? '',
-            'exam_title' => $fields['exam_title']['stringValue'] ?? '',
+            $attempts[] = [
+                'id' => $id,
+                'exam_id' => $fields['exam_id']['stringValue'] ?? '',
+                'exam_title' => $fields['exam_title']['stringValue'] ?? '',
+                'total_questions' => (int) ($fields['total_questions']['integerValue'] ?? 0),
+                'total_correct' => (int) ($fields['total_correct']['integerValue'] ?? 0),
+                'total_wrong' => (int) ($fields['total_wrong']['integerValue'] ?? 0),
+                'score_percent' => (float) ($fields['score_percent']['doubleValue'] ?? 0),
+                'created_at' => $fields['created_at']['timestampValue'] ?? '',
+            ];
+        }
+
+        usort(
+            $attempts,
+            static fn(array $a, array $b): int => strcmp((string) $b['created_at'], (string) $a['created_at'])
+        );
+
+        return $attempts;
+    }
+
+    public function getExam(string $examId): array
+    {
+        $url = $this->baseUrl . '/exams/' . rawurlencode($examId);
+
+        $response = $this->request('GET', $url);
+
+        $fields = $response['fields'] ?? [];
+
+        return [
+            'id' => $examId,
+            'title' => $fields['title']['stringValue'] ?? '',
             'total_questions' => (int) ($fields['total_questions']['integerValue'] ?? 0),
-            'total_correct' => (int) ($fields['total_correct']['integerValue'] ?? 0),
-            'total_wrong' => (int) ($fields['total_wrong']['integerValue'] ?? 0),
-            'score_percent' => (float) ($fields['score_percent']['doubleValue'] ?? 0),
+            'status' => $fields['status']['stringValue'] ?? '',
             'created_at' => $fields['created_at']['timestampValue'] ?? '',
         ];
     }
 
-    usort(
-        $attempts,
-        static fn (array $a, array $b): int => strcmp((string) $b['created_at'], (string) $a['created_at'])
-    );
+    public function updateExamTitle(string $examId, string $title): void
+    {
+        $url = $this->baseUrl
+            . '/exams/'
+            . rawurlencode($examId)
+            . '?updateMask.fieldPaths=title&updateMask.fieldPaths=updated_at';
 
-    return $attempts;
-}
-
-public function getExam(string $examId): array
-{
-    $url = $this->baseUrl . '/exams/' . rawurlencode($examId);
-
-    $response = $this->request('GET', $url);
-
-    $fields = $response['fields'] ?? [];
-
-    return [
-        'id' => $examId,
-        'title' => $fields['title']['stringValue'] ?? '',
-        'total_questions' => (int) ($fields['total_questions']['integerValue'] ?? 0),
-        'status' => $fields['status']['stringValue'] ?? '',
-        'created_at' => $fields['created_at']['timestampValue'] ?? '',
-    ];
-}
-
-public function updateExamTitle(string $examId, string $title): void
-{
-    $url = $this->baseUrl
-        . '/exams/'
-        . rawurlencode($examId)
-        . '?updateMask.fieldPaths=title&updateMask.fieldPaths=updated_at';
-
-    $payload = [
-        'fields' => [
-            'title' => ['stringValue' => $title],
-            'updated_at' => ['timestampValue' => gmdate('Y-m-d\\TH:i:s\\Z')],
-        ],
-    ];
-
-    $this->request('PATCH', $url, $payload);
-}
-
-public function listQuestions(string $examId): array
-{
-    $url = $this->baseUrl . '/exams/' . rawurlencode($examId) . '/questions?pageSize=200';
-
-    $response = $this->request('GET', $url);
-
-    $questions = [];
-
-    foreach (($response['documents'] ?? []) as $document) {
-        $fields = $document['fields'] ?? [];
-        $nameParts = explode('/', (string) ($document['name'] ?? ''));
-        $id = end($nameParts);
-
-        $questions[] = [
-            'id' => $id,
-            'question_id' => $fields['question_id']['stringValue'] ?? $id,
-            'statement' => $fields['statement']['stringValue'] ?? '',
-            'type' => $fields['type']['stringValue'] ?? '',
-            'options' => [
-                'A' => $fields['options']['mapValue']['fields']['A']['stringValue'] ?? '',
-                'B' => $fields['options']['mapValue']['fields']['B']['stringValue'] ?? '',
-                'C' => $fields['options']['mapValue']['fields']['C']['stringValue'] ?? '',
-                'D' => $fields['options']['mapValue']['fields']['D']['stringValue'] ?? '',
+        $payload = [
+            'fields' => [
+                'title' => ['stringValue' => $title],
+                'updated_at' => ['timestampValue' => gmdate('Y-m-d\\TH:i:s\\Z')],
             ],
-            'correct_answer' => $fields['correct_answer']['stringValue'] ?? '',
-            'explanation' => $fields['explanation']['stringValue'] ?? '',
-            'order_index' => (int) ($fields['order_index']['integerValue'] ?? 0),
         ];
+
+        $this->request('PATCH', $url, $payload);
     }
 
-    usort(
-        $questions,
-        static fn (array $a, array $b): int => ((int) $a['order_index']) <=> ((int) $b['order_index'])
-    );
+    public function listQuestions(string $examId): array
+    {
+        $url = $this->baseUrl . '/exams/' . rawurlencode($examId) . '/questions?pageSize=200';
 
-    return $questions;
-}
+        $response = $this->request('GET', $url);
 
-public function updateQuestion(string $examId, string $questionId, array $question): void
-{
-    $url = $this->baseUrl
-        . '/exams/'
-        . rawurlencode($examId)
-        . '/questions/'
-        . rawurlencode($questionId)
-        . '?updateMask.fieldPaths=statement'
-        . '&updateMask.fieldPaths=options'
-        . '&updateMask.fieldPaths=correct_answer'
-        . '&updateMask.fieldPaths=explanation';
+        $questions = [];
 
-    $payload = [
-        'fields' => [
-            'statement' => ['stringValue' => (string) $question['statement']],
-            'options' => $this->toFirestoreValue((array) $question['options']),
-            'correct_answer' => ['stringValue' => (string) $question['correct_answer']],
-            'explanation' => ['stringValue' => (string) $question['explanation']],
-        ],
-    ];
+        foreach (($response['documents'] ?? []) as $document) {
+            $fields = $document['fields'] ?? [];
+            $nameParts = explode('/', (string) ($document['name'] ?? ''));
+            $id = end($nameParts);
 
-    $this->request('PATCH', $url, $payload);
-}
+            $questions[] = [
+                'id' => $id,
+                'question_id' => $fields['question_id']['stringValue'] ?? $id,
+                'statement' => $fields['statement']['stringValue'] ?? '',
+                'type' => $fields['type']['stringValue'] ?? '',
+                'options' => [
+                    'A' => $fields['options']['mapValue']['fields']['A']['stringValue'] ?? '',
+                    'B' => $fields['options']['mapValue']['fields']['B']['stringValue'] ?? '',
+                    'C' => $fields['options']['mapValue']['fields']['C']['stringValue'] ?? '',
+                    'D' => $fields['options']['mapValue']['fields']['D']['stringValue'] ?? '',
+                ],
+                'correct_answer' => $fields['correct_answer']['stringValue'] ?? '',
+                'explanation' => $fields['explanation']['stringValue'] ?? '',
+                'order_index' => (int) ($fields['order_index']['integerValue'] ?? 0),
+            ];
+        }
 
+        usort(
+            $questions,
+            static fn(array $a, array $b): int => ((int) $a['order_index']) <=> ((int) $b['order_index'])
+        );
+
+        return $questions;
+    }
+
+    public function updateQuestion(string $examId, string $questionId, array $question): void
+    {
+        $url = $this->baseUrl
+            . '/exams/'
+            . rawurlencode($examId)
+            . '/questions/'
+            . rawurlencode($questionId)
+            . '?updateMask.fieldPaths=statement'
+            . '&updateMask.fieldPaths=options'
+            . '&updateMask.fieldPaths=correct_answer'
+            . '&updateMask.fieldPaths=explanation';
+
+        $payload = [
+            'fields' => [
+                'statement' => ['stringValue' => (string) $question['statement']],
+                'options' => $this->toFirestoreValue((array) $question['options']),
+                'correct_answer' => ['stringValue' => (string) $question['correct_answer']],
+                'explanation' => ['stringValue' => (string) $question['explanation']],
+            ],
+        ];
+
+        $this->request('PATCH', $url, $payload);
+    }
+
+    public function createFolder(string $name, string $color = 'blue'): string
+    {
+        $payload = [
+            'fields' => [
+                'name' => ['stringValue' => $name],
+                'color' => ['stringValue' => $color],
+                'created_at' => ['timestampValue' => gmdate('Y-m-d\\TH:i:s\\Z')],
+                'updated_at' => ['timestampValue' => gmdate('Y-m-d\\TH:i:s\\Z')],
+            ],
+        ];
+
+        $response = $this->request('POST', $this->baseUrl . '/folders', $payload);
+
+        if (!isset($response['name'])) {
+            throw new ValidationException('Resposta inválida ao criar pasta no Firestore.');
+        }
+
+        $parts = explode('/', $response['name']);
+
+        return end($parts);
+    }
+
+    public function listFolders(): array
+    {
+        $url = $this->baseUrl . '/folders?pageSize=100';
+
+        $response = $this->request('GET', $url);
+
+        $folders = [];
+
+        foreach (($response['documents'] ?? []) as $document) {
+            $fields = $document['fields'] ?? [];
+            $nameParts = explode('/', (string) ($document['name'] ?? ''));
+            $id = end($nameParts);
+
+            $folders[] = [
+                'id' => $id,
+                'name' => $fields['name']['stringValue'] ?? '',
+                'color' => $fields['color']['stringValue'] ?? 'blue',
+                'created_at' => $fields['created_at']['timestampValue'] ?? '',
+                'updated_at' => $fields['updated_at']['timestampValue'] ?? '',
+            ];
+        }
+
+        usort(
+            $folders,
+            static fn(array $a, array $b): int => strcmp((string) $a['name'], (string) $b['name'])
+        );
+
+        return $folders;
+    }
+
+    public function updateExamFolder(string $examId, string $folderId, string $folderName): void
+    {
+        $url = $this->baseUrl
+            . '/exams/'
+            . rawurlencode($examId)
+            . '?updateMask.fieldPaths=folder_id'
+            . '&updateMask.fieldPaths=folder_name'
+            . '&updateMask.fieldPaths=updated_at';
+
+        $payload = [
+            'fields' => [
+                'folder_id' => ['stringValue' => $folderId],
+                'folder_name' => ['stringValue' => $folderName],
+                'updated_at' => ['timestampValue' => gmdate('Y-m-d\\TH:i:s\\Z')],
+            ],
+        ];
+
+        $this->request('PATCH', $url, $payload);
+    }
 }
