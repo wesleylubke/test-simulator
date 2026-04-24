@@ -298,6 +298,8 @@ final class FirestoreRestRepository
             'total_questions' => (int) ($fields['total_questions']['integerValue'] ?? 0),
             'status' => $fields['status']['stringValue'] ?? '',
             'created_at' => $fields['created_at']['timestampValue'] ?? '',
+            'folder_id' => $fields['folder_id']['stringValue'] ?? '',
+            'folder_name' => $fields['folder_name']['stringValue'] ?? 'Sem pasta',
         ];
     }
 

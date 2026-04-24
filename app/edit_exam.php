@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 require_once __DIR__ . '/vendor/autoload.php';
@@ -15,6 +16,7 @@ $errorMessage = null;
 $successMessage = null;
 $exam = null;
 $questions = [];
+$folders = [];
 
 function repository(): FirestoreRestRepository
 {
@@ -44,6 +46,21 @@ try {
         }
 
         $repo->updateExamTitle($examId, $title);
+
+        $folderId = trim((string) ($_POST['folder_id'] ?? ''));
+
+        $folderName = 'Sem pasta';
+
+        if ($folderId !== '') {
+            foreach ($repo->listFolders() as $folder) {
+                if ((string) $folder['id'] === $folderId) {
+                    $folderName = (string) $folder['name'];
+                    break;
+                }
+            }
+        }
+
+        $repo->updateExamFolder($examId, $folderId, $folderName);
 
         $postedQuestions = $_POST['questions'] ?? [];
 
@@ -111,6 +128,8 @@ try {
 
     $exam = $repo->getExam($examId);
     $questions = $repo->listQuestions($examId);
+
+    $folders = $repo->listFolders();
 } catch (Throwable $e) {
     $errorMessage = $e->getMessage();
 }
@@ -150,8 +169,26 @@ include __DIR__ . '/templates/layout/header.php';
                         type="text"
                         name="title"
                         value="<?= htmlspecialchars((string) $exam['title']) ?>"
-                        required
-                    >
+                        required>
+                </div>
+            </div>
+
+            <div class="field">
+                <label class="label">Pasta</label>
+                <div class="control">
+                    <div class="select is-fullwidth">
+                        <select name="folder_id">
+                            <option value="">Sem pasta</option>
+
+                            <?php foreach ($folders as $folder): ?>
+                                <option
+                                    value="<?= htmlspecialchars((string) $folder['id']) ?>"
+                                    <?= (string) ($exam['folder_id'] ?? '') === (string) $folder['id'] ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars((string) $folder['name']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -206,8 +243,7 @@ include __DIR__ . '/templates/layout/header.php';
                         <input
                             type="hidden"
                             name="questions[<?= htmlspecialchars($questionId) ?>][type]"
-                            value="<?= htmlspecialchars($type) ?>"
-                        >
+                            value="<?= htmlspecialchars($type) ?>">
 
                         <div class="field">
                             <label class="label">Enunciado</label>
@@ -215,8 +251,7 @@ include __DIR__ . '/templates/layout/header.php';
                                 <textarea
                                     class="textarea"
                                     name="questions[<?= htmlspecialchars($questionId) ?>][statement]"
-                                    required
-                                ><?= htmlspecialchars((string) $question['statement']) ?></textarea>
+                                    required><?= htmlspecialchars((string) $question['statement']) ?></textarea>
                             </div>
                         </div>
 
@@ -231,8 +266,7 @@ include __DIR__ . '/templates/layout/header.php';
                                                 type="text"
                                                 name="questions[<?= htmlspecialchars($questionId) ?>][option_a]"
                                                 value="<?= htmlspecialchars((string) ($options['A'] ?? '')) ?>"
-                                                required
-                                            >
+                                                required>
                                         </div>
                                     </div>
                                 </div>
@@ -246,8 +280,7 @@ include __DIR__ . '/templates/layout/header.php';
                                                 type="text"
                                                 name="questions[<?= htmlspecialchars($questionId) ?>][option_b]"
                                                 value="<?= htmlspecialchars((string) ($options['B'] ?? '')) ?>"
-                                                required
-                                            >
+                                                required>
                                         </div>
                                     </div>
                                 </div>
@@ -263,8 +296,7 @@ include __DIR__ . '/templates/layout/header.php';
                                                 type="text"
                                                 name="questions[<?= htmlspecialchars($questionId) ?>][option_c]"
                                                 value="<?= htmlspecialchars((string) ($options['C'] ?? '')) ?>"
-                                                required
-                                            >
+                                                required>
                                         </div>
                                     </div>
                                 </div>
@@ -278,8 +310,7 @@ include __DIR__ . '/templates/layout/header.php';
                                                 type="text"
                                                 name="questions[<?= htmlspecialchars($questionId) ?>][option_d]"
                                                 value="<?= htmlspecialchars((string) ($options['D'] ?? '')) ?>"
-                                                required
-                                            >
+                                                required>
                                         </div>
                                     </div>
                                 </div>
@@ -293,8 +324,7 @@ include __DIR__ . '/templates/layout/header.php';
                                             <?php foreach (['A', 'B', 'C', 'D'] as $answerOption): ?>
                                                 <option
                                                     value="<?= $answerOption ?>"
-                                                    <?= (string) $question['correct_answer'] === $answerOption ? 'selected' : '' ?>
-                                                >
+                                                    <?= (string) $question['correct_answer'] === $answerOption ? 'selected' : '' ?>>
                                                     <?= $answerOption ?>
                                                 </option>
                                             <?php endforeach; ?>
@@ -311,8 +341,7 @@ include __DIR__ . '/templates/layout/header.php';
                                         type="text"
                                         name="questions[<?= htmlspecialchars($questionId) ?>][correct_answer]"
                                         value="<?= htmlspecialchars((string) $question['correct_answer']) ?>"
-                                        required
-                                    >
+                                        required>
                                 </div>
                             </div>
                         <?php else: ?>
@@ -327,8 +356,7 @@ include __DIR__ . '/templates/layout/header.php';
                             <div class="control">
                                 <textarea
                                     class="textarea"
-                                    name="questions[<?= htmlspecialchars($questionId) ?>][explanation]"
-                                ><?= htmlspecialchars((string) $question['explanation']) ?></textarea>
+                                    name="questions[<?= htmlspecialchars($questionId) ?>][explanation]"><?= htmlspecialchars((string) $question['explanation']) ?></textarea>
                             </div>
                         </div>
                     </div>
