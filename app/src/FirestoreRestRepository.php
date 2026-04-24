@@ -88,12 +88,19 @@ final class FirestoreRestRepository
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_CUSTOMREQUEST => $method,
-            CURLOPT_POSTFIELDS => $method === 'GET' ? null : json_encode($payload, JSON_UNESCAPED_UNICODE),
             CURLOPT_HTTPHEADER => [
                 'Authorization: Bearer ' . $token,
                 'Content-Type: application/json',
             ],
         ]);
+
+        if (!in_array($method, ['GET', 'DELETE'], true)) {
+            curl_setopt(
+                $ch,
+                CURLOPT_POSTFIELDS,
+                json_encode($payload, JSON_UNESCAPED_UNICODE)
+            );
+        }
 
         $response = curl_exec($ch);
 
@@ -175,27 +182,34 @@ final class FirestoreRestRepository
     }
 
     public function listExams(): array
-{
-    $url = $this->baseUrl . '/exams?pageSize=50';
+    {
+        $url = $this->baseUrl . '/exams?pageSize=50';
 
-    $response = $this->request('GET', $url);
+        $response = $this->request('GET', $url);
 
-    $exams = [];
+        $exams = [];
 
-    foreach (($response['documents'] ?? []) as $document) {
-        $fields = $document['fields'] ?? [];
-        $nameParts = explode('/', $document['name'] ?? '');
-        $id = end($nameParts);
+        foreach (($response['documents'] ?? []) as $document) {
+            $fields = $document['fields'] ?? [];
+            $nameParts = explode('/', $document['name'] ?? '');
+            $id = end($nameParts);
 
-        $exams[] = [
-            'id' => $id,
-            'title' => $fields['title']['stringValue'] ?? '',
-            'total_questions' => (int) ($fields['total_questions']['integerValue'] ?? 0),
-            'status' => $fields['status']['stringValue'] ?? '',
-            'created_at' => $fields['created_at']['timestampValue'] ?? '',
-        ];
+            $exams[] = [
+                'id' => $id,
+                'title' => $fields['title']['stringValue'] ?? '',
+                'total_questions' => (int) ($fields['total_questions']['integerValue'] ?? 0),
+                'status' => $fields['status']['stringValue'] ?? '',
+                'created_at' => $fields['created_at']['timestampValue'] ?? '',
+            ];
+        }
+
+        return $exams;
     }
 
-    return $exams;
-}
+    public function deleteExam(string $examId): void
+    {
+        $url = $this->baseUrl . '/exams/' . rawurlencode($examId);
+
+        $this->request('DELETE', $url);
+    }
 }

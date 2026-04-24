@@ -17,7 +17,37 @@ $successMessage = null;
 $uploadedFileName = null;
 $examId = null;
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+function getRepository(): FirestoreRestRepository
+{
+    $credentialsPath = getenv('GOOGLE_APPLICATION_CREDENTIALS');
+
+    if (!is_string($credentialsPath) || $credentialsPath === '') {
+        throw new ValidationException('Variável GOOGLE_APPLICATION_CREDENTIALS não configurada.');
+    }
+
+    $tokenService = new GoogleAccessTokenService($credentialsPath);
+
+    return new FirestoreRestRepository($tokenService);
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete_exam') {
+    try {
+        $examIdToDelete = trim((string) ($_POST['exam_id'] ?? ''));
+
+        if ($examIdToDelete === '') {
+            throw new ValidationException('ID da prova não informado para exclusão.');
+        }
+
+        $repository = getRepository();
+        $repository->deleteExam($examIdToDelete);
+
+        $successMessage = 'Prova excluída com sucesso.';
+    } catch (Throwable $e) {
+        $errorMessage = $e->getMessage();
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') !== 'delete_exam') {
     try {
         if (!isset($_FILES['exam_file'])) {
             throw new ValidationException('Nenhum arquivo foi enviado.');
@@ -44,13 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $parsedExam = $parser->parse($tmpName);
 
-        $credentialsPath = getenv('GOOGLE_APPLICATION_CREDENTIALS');
-        if (!is_string($credentialsPath) || $credentialsPath === '') {
-            throw new ValidationException('Variável GOOGLE_APPLICATION_CREDENTIALS não configurada.');
-        }
-
-        $tokenService = new GoogleAccessTokenService($credentialsPath);
-        $repository = new FirestoreRestRepository($tokenService);
+        $repository = getRepository();
 
         $csvPath = 'upload/' . date('Y/m/d/') . basename($uploadedFileName);
 
@@ -64,13 +88,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 try {
-    $credentialsPath = getenv('GOOGLE_APPLICATION_CREDENTIALS');
-
-    if (is_string($credentialsPath) && $credentialsPath !== '') {
-        $tokenService = new GoogleAccessTokenService($credentialsPath);
-        $repository = new FirestoreRestRepository($tokenService);
-        $exams = $repository->listExams();
-    }
+    $repository = getRepository();
+    $exams = $repository->listExams();
 } catch (Throwable $e) {
     // Não bloqueia a página se a listagem falhar.
 }
