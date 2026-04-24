@@ -67,7 +67,7 @@ include __DIR__ . '/layout/header.php';
 
 <header class="app-page-header">
     <div>
-        <h1 class="app-page-title">Provas</h1>
+        <h1 class="app-page-title">Minhas provas</h1>
         <p class="app-page-subtitle">Organize suas provas por assunto e selecione uma pasta para estudar.</p>
     </div>
 
