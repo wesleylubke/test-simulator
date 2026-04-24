@@ -1,210 +1,139 @@
 <?php
 declare(strict_types=1);
 
-/** @var App\ParsedExam|null $parsedExam */
-/** @var string|null $errorMessage */
-/** @var string|null $successMessage */
-/** @var string|null $uploadedFileName */
-/** @var array<int, array<string, mixed>> $exams */
+/** @var array $exams */
+/** @var array $folders */
 
-$exams = $exams ?? [];
 $pageTitle = 'Minhas provas - Test Simulator';
 
-$activeExams = count($exams);
-$avgScore = '—';
-
 include __DIR__ . '/layout/header.php';
+
+$groupedExams = [];
+
+foreach ($exams as $exam) {
+    $folderName = $exam['folder_name'] ?: 'Sem pasta';
+    $groupedExams[$folderName][] = $exam;
+}
 ?>
-
-<?php if ($successMessage !== null): ?>
-    <div class="notification is-success is-light">
-        <?= htmlspecialchars($successMessage) ?>
-    </div>
-<?php endif; ?>
-
-<?php if ($errorMessage !== null): ?>
-    <div class="notification is-danger is-light">
-        <?= htmlspecialchars($errorMessage) ?>
-    </div>
-<?php endif; ?>
 
 <header class="app-page-header">
     <div>
         <h1 class="app-page-title">Minhas provas</h1>
-        <p class="app-page-subtitle">Selecione uma prova para estudar ou importe um novo CSV.</p>
+        <p class="app-page-subtitle">Organize suas provas por assunto.</p>
     </div>
-
-    <button
-        class="button app-button-primary"
-        type="button"
-        onclick="document.getElementById('upload-panel').scrollIntoView({behavior: 'smooth'});"
-    >
-        + Nova prova
-    </button>
 </header>
 
-<div class="columns mb-5">
-    <div class="column">
-        <div class="app-panel app-stat">
-            <div class="app-stat-label">Provas ativas</div>
-            <div class="app-stat-value"><?= (int) $activeExams ?></div>
-        </div>
-    </div>
+<?php if ($successMessage): ?>
+    <div class="notification is-success is-light"><?= htmlspecialchars($successMessage) ?></div>
+<?php endif; ?>
 
-    <div class="column">
-        <div class="app-panel app-stat">
-            <div class="app-stat-label">Média geral</div>
-            <div class="app-stat-value is-success"><?= htmlspecialchars($avgScore) ?></div>
-        </div>
-    </div>
-</div>
+<?php if ($errorMessage): ?>
+    <div class="notification is-danger is-light"><?= htmlspecialchars($errorMessage) ?></div>
+<?php endif; ?>
 
-<div class="field mb-5">
-    <div class="control has-icons-left">
-        <input id="exam-search" class="input app-search" type="text" placeholder="Buscar provas..." autocomplete="off">
-        <span class="icon is-left">⌕</span>
-    </div>
-</div>
+<!-- CRIAR PASTA -->
+<section class="app-panel p-5 mb-5">
+    <h2 class="title is-5">Nova pasta</h2>
 
-<section id="exam-list" class="mb-6">
-    <?php if (empty($exams)): ?>
-        <div class="app-panel p-5 has-text-centered">
-            <h2 class="title is-5">Nenhuma prova cadastrada</h2>
-            <p class="has-text-grey mb-4">Importe um CSV para começar a estudar.</p>
-            <button
-                class="button app-button-primary"
-                type="button"
-                onclick="document.getElementById('upload-panel').scrollIntoView({behavior: 'smooth'});"
+    <form method="post" class="columns is-vcentered">
+        <input type="hidden" name="action" value="create_folder">
+
+        <div class="column">
+            <input
+                class="input"
+                type="text"
+                name="folder_name"
+                placeholder="Ex: Biologia"
+                required
             >
-                Importar primeira prova
+        </div>
+
+        <div class="column is-narrow">
+            <button class="button app-button-primary" type="submit">
+                Criar
             </button>
         </div>
-    <?php else: ?>
-        <?php foreach ($exams as $exam): ?>
-            <?php
-            $examId = (string) ($exam['id'] ?? '');
-            $title = (string) ($exam['title'] ?? 'Prova sem título');
-            $status = strtolower((string) ($exam['status'] ?? 'processed'));
-
-            $statusClass = match ($status) {
-                'draft' => 'is-draft',
-                'archived' => 'is-archived',
-                'processed' => 'is-processed',
-                default => 'is-published',
-            };
-
-            $statusLabel = match ($status) {
-                'draft' => 'Rascunho',
-                'archived' => 'Arquivada',
-                default => 'Publicada',
-            };
-            ?>
-
-            <article class="app-exam-card exam-item" data-title="<?= htmlspecialchars(mb_strtolower($title)) ?>">
-                <div class="columns is-vcentered">
-                    <div class="column">
-                        <div class="is-flex is-justify-content-space-between is-align-items-start mb-2">
-                            <h2 class="app-exam-title"><?= htmlspecialchars($title) ?></h2>
-                            <span class="app-status <?= htmlspecialchars($statusClass) ?>">
-                                <?= htmlspecialchars($statusLabel) ?>
-                            </span>
-                        </div>
-
-                        <p class="app-exam-meta">
-                            ☰ <?= (int) ($exam['total_questions'] ?? 0) ?> questões
-                            <span class="mx-2">•</span>
-                            Atualizada recentemente
-                        </p>
-                    </div>
-
-                    <div class="column is-narrow">
-                        <div class="buttons app-exam-actions">
-                            <a class="button app-button-primary" href="/exam.php?id=<?= urlencode($examId) ?>">
-                                Estudar
-                            </a>
-
-                            <a class="app-button-icon" href="/edit_exam.php?id=<?= urlencode($examId) ?>" title="Editar">
-                                ✎
-                            </a>
-
-                            <form method="post" onsubmit="return confirm('Deseja realmente excluir esta prova?');">
-                                <input type="hidden" name="action" value="delete_exam">
-                                <input type="hidden" name="exam_id" value="<?= htmlspecialchars($examId) ?>">
-                                <button class="app-button-icon is-danger" type="submit" title="Excluir">
-                                    🗑
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </article>
-        <?php endforeach; ?>
-    <?php endif; ?>
-</section>
-
-<section id="upload-panel" class="app-panel app-upload mb-5">
-    <h2 class="title is-4">Importar nova prova</h2>
-    <p class="has-text-grey mb-4">Envie um CSV no formato esperado. A prova será validada e salva no Firestore.</p>
-
-    <form method="post" enctype="multipart/form-data">
-        <div class="field">
-            <label class="label">Arquivo CSV</label>
-            <div class="control">
-                <input class="input" type="file" name="exam_file" accept=".csv,text/csv" required>
-            </div>
-        </div>
-
-        <button class="button app-button-primary" type="submit">Enviar CSV</button>
     </form>
 </section>
 
-<?php if ($parsedExam !== null): ?>
-    <section class="app-panel p-5 mb-5">
-        <h2 class="title is-4">Prova importada</h2>
+<!-- LISTA DE PASTAS -->
+<?php if (empty($groupedExams)): ?>
+    <div class="app-panel p-5 has-text-centered">
+        <p>Nenhuma prova cadastrada.</p>
+    </div>
+<?php else: ?>
 
-        <div class="columns">
-            <div class="column">
-                <div class="notification is-light">
-                    <strong>Arquivo</strong><br>
-                    <?= htmlspecialchars((string) $uploadedFileName) ?>
-                </div>
+    <?php foreach ($groupedExams as $folderName => $folderExams): ?>
+
+        <section class="mb-6">
+            <div class="is-flex is-justify-content-space-between is-align-items-center mb-3">
+                <h2 class="title is-4"><?= htmlspecialchars($folderName) ?></h2>
+                <span class="tag is-dark"><?= count($folderExams) ?> provas</span>
             </div>
 
-            <div class="column">
-                <div class="notification is-light">
-                    <strong>Título</strong><br>
-                    <?= htmlspecialchars((string) $parsedExam->title) ?>
-                </div>
-            </div>
+            <?php foreach ($folderExams as $exam): ?>
+                <?php
+                $examId = (string) $exam['id'];
+                ?>
 
-            <div class="column">
-                <div class="notification is-light">
-                    <strong>Questões</strong><br>
-                    <?= $parsedExam->totalQuestions() ?>
+                <div class="app-exam-card">
+                    <div class="columns is-vcentered">
+                        <div class="column">
+                            <h3 class="app-exam-title">
+                                <?= htmlspecialchars((string) $exam['title']) ?>
+                            </h3>
+
+                            <p class="app-exam-meta">
+                                <?= (int) ($exam['total_questions'] ?? 0) ?> questões
+                            </p>
+                        </div>
+
+                        <div class="column is-narrow">
+                            <div class="buttons">
+                                <a class="button app-button-primary"
+                                   href="/exam.php?id=<?= urlencode($examId) ?>">
+                                    Estudar
+                                </a>
+
+                                <a class="button is-light"
+                                   href="/edit_exam.php?id=<?= urlencode($examId) ?>">
+                                    Editar
+                                </a>
+
+                                <form method="post"
+                                      onsubmit="return confirm('Excluir esta prova?');">
+                                    <input type="hidden" name="action" value="delete_exam">
+                                    <input type="hidden" name="exam_id" value="<?= $examId ?>">
+
+                                    <button class="button is-danger is-light">
+                                        Excluir
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
-    </section>
+
+            <?php endforeach; ?>
+        </section>
+
+    <?php endforeach; ?>
+
 <?php endif; ?>
 
-<section class="app-panel p-5">
-    <h2 class="title is-5">Formato esperado</h2>
-    <pre><code>exam_title,question_id,question_type,statement,option_a,option_b,option_c,option_d,correct_answer,explanation</code></pre>
+<!-- IMPORTAR CSV -->
+<section class="app-panel p-5 mt-6">
+    <h2 class="title is-5">Importar prova</h2>
+
+    <form method="post" enctype="multipart/form-data">
+        <div class="field">
+            <input class="input" type="file" name="exam_file" required>
+        </div>
+
+        <button class="button app-button-primary">
+            Enviar CSV
+        </button>
+    </form>
 </section>
-
-<script>
-const searchInput = document.getElementById('exam-search');
-
-if (searchInput) {
-    searchInput.addEventListener('input', function () {
-        const term = this.value.toLowerCase().trim();
-
-        document.querySelectorAll('.exam-item').forEach(function (item) {
-            const title = item.dataset.title || '';
-            item.style.display = title.includes(term) ? '' : 'none';
-        });
-    });
-}
-</script>
 
 <?php include __DIR__ . '/layout/footer.php'; ?>
