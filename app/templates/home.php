@@ -1,10 +1,14 @@
 <?php
 
 declare(strict_types=1);
-/** @var ParsedExam|null $parsedExam */
+
+/** @var App\ParsedExam|null $parsedExam */
 /** @var string|null $errorMessage */
 /** @var string|null $successMessage */
 /** @var string|null $uploadedFileName */
+/** @var array<int, array<string, mixed>> $exams */
+
+$exams = $exams ?? [];
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -90,7 +94,8 @@ declare(strict_types=1);
             max-width: 100%;
         }
 
-        button {
+        button,
+        .button-link {
             background: var(--accent);
             color: white;
             border: none;
@@ -98,9 +103,12 @@ declare(strict_types=1);
             padding: 12px 18px;
             cursor: pointer;
             font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
         }
 
-        button:hover {
+        button:hover,
+        .button-link:hover {
             opacity: 0.92;
         }
 
@@ -148,6 +156,15 @@ declare(strict_types=1);
             margin: 0;
             padding-left: 18px;
         }
+
+        .exam-link {
+            color: var(--text);
+            text-decoration: none;
+        }
+
+        .exam-link:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 
@@ -155,7 +172,7 @@ declare(strict_types=1);
     <div class="container">
         <div class="card">
             <h1>Test Simulator</h1>
-            <p class="muted">Importe um arquivo CSV para validar a estrutura da prova antes de persistir no Firestore.</p>
+            <p class="muted">Importe um arquivo CSV para validar e salvar uma prova no Firestore.</p>
 
             <?php if ($successMessage !== null): ?>
                 <div class="alert success"><?= htmlspecialchars($successMessage) ?></div>
@@ -168,7 +185,7 @@ declare(strict_types=1);
             <form method="post" enctype="multipart/form-data">
                 <div class="upload-row">
                     <input type="file" name="exam_file" accept=".csv,text/csv" required>
-                    <button type="submit">Validar CSV</button>
+                    <button type="submit">Enviar CSV</button>
                 </div>
             </form>
         </div>
@@ -181,15 +198,23 @@ declare(strict_types=1);
             <?php else: ?>
                 <?php foreach ($exams as $exam): ?>
                     <div class="question">
-                        <h3><?= htmlspecialchars($exam['title']) ?></h3>
+                        <h3>
+                            <a class="exam-link" href="/exam.php?id=<?= urlencode((string) $exam['id']) ?>">
+                                <?= htmlspecialchars((string) ($exam['title'] ?? 'Prova sem título')) ?>
+                            </a>
+                        </h3>
+
                         <p class="muted">
-                            ID: <?= htmlspecialchars($exam['id']) ?> ·
-                            Questões: <?= (int) $exam['total_questions'] ?> ·
-                            Status: <?= htmlspecialchars($exam['status']) ?>
+                            ID: <?= htmlspecialchars((string) ($exam['id'] ?? '')) ?>
+                            · Questões: <?= (int) ($exam['total_questions'] ?? 0) ?>
+                            <?php if (!empty($exam['status'])): ?>
+                                · Status: <?= htmlspecialchars((string) $exam['status']) ?>
+                            <?php endif; ?>
                         </p>
-                        <p class="muted">
-                            Criada em: <?= htmlspecialchars($exam['created_at']) ?>
-                        </p>
+
+                        <a class="button-link" href="/exam.php?id=<?= urlencode((string) $exam['id']) ?>">
+                            Estudar prova
+                        </a>
                     </div>
                 <?php endforeach; ?>
             <?php endif; ?>
@@ -216,7 +241,7 @@ declare(strict_types=1);
                     </div>
                     <div class="meta-box">
                         <strong>Título</strong>
-                        <div><?= htmlspecialchars($parsedExam->title) ?></div>
+                        <div><?= htmlspecialchars((string) $parsedExam->title) ?></div>
                     </div>
                     <div class="meta-box">
                         <strong>Total de questões</strong>
