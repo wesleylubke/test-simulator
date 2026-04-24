@@ -47,6 +47,23 @@ strong,
     color: var(--app-text) !important;
 }
 
+.folder-toggle {
+    background: transparent !important;
+    border: none !important;
+    color: var(--app-text) !important;
+    box-shadow: none !important;
+    padding: 0.5rem 0 !important;
+}
+
+.folder-toggle:hover {
+    background: transparent !important;
+}
+
+.folder-arrow {
+    font-weight: 800;
+    color: var(--app-muted);
+}
+
 .has-text-grey {
     color: var(--app-muted) !important;
 }

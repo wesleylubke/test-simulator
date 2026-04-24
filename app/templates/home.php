@@ -64,17 +64,28 @@ foreach ($exams as $exam) {
 <?php else: ?>
 
     <?php foreach ($groupedExams as $folderName => $folderExams): ?>
+    <?php
+    $folderKey = 'folder_' . md5((string) $folderName);
+    ?>
 
-        <section class="mb-6">
-            <div class="is-flex is-justify-content-space-between is-align-items-center mb-3">
-                <h2 class="title is-4"><?= htmlspecialchars($folderName) ?></h2>
-                <span class="tag is-dark"><?= count($folderExams) ?> provas</span>
-            </div>
+    <section class="mb-5 app-panel p-4">
+        <button
+            type="button"
+            class="button is-fullwidth is-justify-content-space-between folder-toggle"
+            data-target="<?= htmlspecialchars($folderKey) ?>"
+            aria-expanded="true"
+        >
+            <span>
+                <strong><?= htmlspecialchars($folderName) ?></strong>
+                <span class="tag is-dark ml-2"><?= count($folderExams) ?> provas</span>
+            </span>
 
+            <span class="folder-arrow">▼</span>
+        </button>
+
+        <div id="<?= htmlspecialchars($folderKey) ?>" class="folder-content mt-4">
             <?php foreach ($folderExams as $exam): ?>
-                <?php
-                $examId = (string) $exam['id'];
-                ?>
+                <?php $examId = (string) $exam['id']; ?>
 
                 <div class="app-exam-card">
                     <div class="columns is-vcentered">
@@ -103,7 +114,7 @@ foreach ($exams as $exam) {
                                 <form method="post"
                                       onsubmit="return confirm('Excluir esta prova?');">
                                     <input type="hidden" name="action" value="delete_exam">
-                                    <input type="hidden" name="exam_id" value="<?= $examId ?>">
+                                    <input type="hidden" name="exam_id" value="<?= htmlspecialchars($examId) ?>">
 
                                     <button class="button is-danger is-light">
                                         Excluir
@@ -115,9 +126,9 @@ foreach ($exams as $exam) {
                 </div>
 
             <?php endforeach; ?>
-        </section>
-
-    <?php endforeach; ?>
+        </div>
+    </section>
+<?php endforeach; ?>
 
 <?php endif; ?>
 
@@ -135,5 +146,28 @@ foreach ($exams as $exam) {
         </button>
     </form>
 </section>
+
+<script>
+document.querySelectorAll('.folder-toggle').forEach(function (button) {
+    button.addEventListener('click', function () {
+        const targetId = button.dataset.target;
+        const content = document.getElementById(targetId);
+        const arrow = button.querySelector('.folder-arrow');
+
+        if (!content) {
+            return;
+        }
+
+        const isHidden = content.style.display === 'none';
+
+        content.style.display = isHidden ? '' : 'none';
+        button.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+
+        if (arrow) {
+            arrow.textContent = isHidden ? '▼' : '▶';
+        }
+    });
+});
+</script>
 
 <?php include __DIR__ . '/layout/footer.php'; ?>
