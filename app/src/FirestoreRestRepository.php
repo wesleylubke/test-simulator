@@ -212,4 +212,73 @@ final class FirestoreRestRepository
 
         $this->request('DELETE', $url);
     }
+
+    public function saveAttempt(
+        string $examId,
+        string $examTitle,
+        int $totalQuestions,
+        int $totalCorrect,
+        int $totalWrong,
+        array $answers
+    ): string {
+        $scorePercent = $totalQuestions > 0
+            ? round(($totalCorrect / $totalQuestions) * 100, 2)
+            : 0;
+
+        $payload = [
+            'fields' => [
+                'exam_id' => ['stringValue' => $examId],
+                'exam_title' => ['stringValue' => $examTitle],
+                'total_questions' => ['integerValue' => (string) $totalQuestions],
+                'total_correct' => ['integerValue' => (string) $totalCorrect],
+                'total_wrong' => ['integerValue' => (string) $totalWrong],
+                'score_percent' => ['doubleValue' => $scorePercent],
+                'created_at' => ['timestampValue' => gmdate('Y-m-d\\TH:i:s\\Z')],
+                'answers' => $this->toFirestoreValue($answers),
+            ],
+        ];
+
+        $response = $this->request('POST', $this->baseUrl . '/attempts', $payload);
+
+        if (!isset($response['name'])) {
+            throw new ValidationException('Resposta inválida ao salvar tentativa no Firestore.');
+        }
+
+        $parts = explode('/', $response['name']);
+
+        return end($parts);
+    }
+
+    public function listAttempts(): array
+{
+    $url = $this->baseUrl . '/attempts?pageSize=50';
+
+    $response = $this->request('GET', $url);
+
+    $attempts = [];
+
+    foreach (($response['documents'] ?? []) as $document) {
+        $fields = $document['fields'] ?? [];
+        $nameParts = explode('/', (string) ($document['name'] ?? ''));
+        $id = end($nameParts);
+
+        $attempts[] = [
+            'id' => $id,
+            'exam_id' => $fields['exam_id']['stringValue'] ?? '',
+            'exam_title' => $fields['exam_title']['stringValue'] ?? '',
+            'total_questions' => (int) ($fields['total_questions']['integerValue'] ?? 0),
+            'total_correct' => (int) ($fields['total_correct']['integerValue'] ?? 0),
+            'total_wrong' => (int) ($fields['total_wrong']['integerValue'] ?? 0),
+            'score_percent' => (float) ($fields['score_percent']['doubleValue'] ?? 0),
+            'created_at' => $fields['created_at']['timestampValue'] ?? '',
+        ];
+    }
+
+    usort(
+        $attempts,
+        static fn (array $a, array $b): int => strcmp((string) $b['created_at'], (string) $a['created_at'])
+    );
+
+    return $attempts;
+}
 }
