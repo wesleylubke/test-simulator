@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 /** @var App\ParsedExam|null $parsedExam */
@@ -8,8 +9,10 @@ declare(strict_types=1);
 /** @var array<int, array<string, mixed>> $exams */
 
 $exams = $exams ?? [];
+$pageTitle = 'Minhas provas - Test Simulator';
+
 $activeExams = count($exams);
-$pageTitle = 'My Exams - Test Simulator';
+$avgScore = '—';
 
 include __DIR__ . '/layout/header.php';
 ?>
@@ -29,14 +32,18 @@ include __DIR__ . '/layout/header.php';
 <div class="level mb-5">
     <div class="level-left">
         <div>
-            <h1 class="title is-3">My Exams</h1>
-            <p class="subtitle is-6 has-text-grey">Select a simulator to start practicing</p>
+            <h1 class="title is-2 app-page-title">Minhas provas</h1>
+            <p class="app-subtitle">Selecione uma prova para estudar ou importe um novo CSV.</p>
         </div>
     </div>
 
-    <div class="level-right">
-        <button class="button app-button-dark" onclick="document.getElementById('upload-box').scrollIntoView({behavior: 'smooth'});">
-            + New Exam
+    <div class="level-right desktop-actions">
+        <button
+            class="button app-button-primary"
+            type="button"
+            onclick="document.getElementById('upload-panel').scrollIntoView({behavior: 'smooth'});"
+        >
+            + Nova prova
         </button>
     </div>
 </div>
@@ -44,98 +51,116 @@ include __DIR__ . '/layout/header.php';
 <div class="columns mb-5">
     <div class="column">
         <div class="stat-card">
-            <p class="has-text-grey">Active Exams</p>
-            <div class="stat-number"><?= $activeExams ?></div>
+            <div class="stat-label">Provas ativas</div>
+            <div class="stat-value"><?= (int) $activeExams ?></div>
         </div>
     </div>
 
     <div class="column">
         <div class="stat-card">
-            <p class="has-text-grey">Avg. Score</p>
-            <div class="stat-number is-green">—</div>
+            <div class="stat-label">Média geral</div>
+            <div class="stat-value is-success-text"><?= htmlspecialchars((string) $avgScore) ?></div>
         </div>
     </div>
 </div>
 
 <div class="field mb-5">
     <div class="control has-icons-left">
-        <input id="exam-search" class="input is-medium" type="text" placeholder="Search exams...">
+        <input
+            id="exam-search"
+            class="input search-input"
+            type="text"
+            placeholder="Buscar provas..."
+            autocomplete="off"
+        >
         <span class="icon is-left">⌕</span>
     </div>
 </div>
 
-<div class="columns is-multiline" id="exam-list">
+<div id="exam-list">
     <?php if (empty($exams)): ?>
-        <div class="column is-12">
-            <div class="box app-card">
-                <p class="has-text-grey">Nenhuma prova cadastrada ainda.</p>
-            </div>
+        <div class="app-card p-5 has-text-centered">
+            <h2 class="title is-5">Nenhuma prova cadastrada</h2>
+            <p class="has-text-grey mb-4">Importe um CSV para começar a estudar.</p>
+            <button
+                class="button app-button-primary"
+                type="button"
+                onclick="document.getElementById('upload-panel').scrollIntoView({behavior: 'smooth'});"
+            >
+                Importar primeira prova
+            </button>
         </div>
     <?php else: ?>
         <?php foreach ($exams as $exam): ?>
             <?php
-            $status = strtolower((string) ($exam['status'] ?? 'published'));
+            $examId = (string) ($exam['id'] ?? '');
+            $title = (string) ($exam['title'] ?? 'Prova sem título');
+            $status = strtolower((string) ($exam['status'] ?? 'processed'));
+
             $statusClass = match ($status) {
                 'draft' => 'status-draft',
                 'archived' => 'status-archived',
+                'processed' => 'status-processed',
                 default => 'status-published',
             };
+
+            $statusLabel = match ($status) {
+                'draft' => 'Rascunho',
+                'archived' => 'Arquivada',
+                'processed' => 'Publicada',
+                default => ucfirst($status),
+            };
             ?>
-            <div class="column is-12 exam-item">
-                <div class="box exam-card">
-                    <div class="columns is-vcentered">
-                        <div class="column">
-                            <div class="is-flex is-justify-content-space-between is-align-items-center mb-3">
-                                <h2 class="title is-5 mb-0 exam-title">
-                                    <?= htmlspecialchars((string) ($exam['title'] ?? 'Prova sem título')) ?>
-                                </h2>
 
-                                <span class="status-pill <?= $statusClass ?>">
-                                    <?= htmlspecialchars((string) ($exam['status'] ?? 'Published')) ?>
-                                </span>
-                            </div>
+            <article class="exam-card mb-4 exam-item" data-title="<?= htmlspecialchars(mb_strtolower($title)) ?>">
+                <div class="columns is-vcentered is-variable is-5">
+                    <div class="column">
+                        <div class="is-flex is-justify-content-space-between is-align-items-start mb-3">
+                            <h2 class="title is-5 exam-title mb-0">
+                                <?= htmlspecialchars($title) ?>
+                            </h2>
 
-                            <p class="has-text-grey is-size-7">
-                                ☰ <?= (int) ($exam['total_questions'] ?? 0) ?> Questions
-                                &nbsp; • &nbsp;
-                                Updated recently
-                            </p>
+                            <span class="status-pill <?= htmlspecialchars($statusClass) ?>">
+                                <?= htmlspecialchars($statusLabel) ?>
+                            </span>
                         </div>
 
-                        <div class="column is-narrow">
-                            <div class="buttons is-right">
-                                <a class="button app-button-dark"
-                                   href="/exam.php?id=<?= urlencode((string) $exam['id']) ?>">
-                                    Study Now
-                                </a>
+                        <p class="exam-meta">
+                            ☰ <?= (int) ($exam['total_questions'] ?? 0) ?> questões
+                            <span class="mx-2">•</span>
+                            Atualizada recentemente
+                        </p>
+                    </div>
 
-                                <a class="button is-light"
-                                   href="/edit_exam.php?id=<?= urlencode((string) $exam['id']) ?>">
-                                    ✎
-                                </a>
+                    <div class="column is-narrow">
+                        <div class="buttons exam-actions">
+                            <a class="button app-button-primary" href="/exam.php?id=<?= urlencode($examId) ?>">
+                                Estudar
+                            </a>
 
-                                <form method="post"
-                                      onsubmit="return confirm('Deseja realmente excluir esta prova?');">
-                                    <input type="hidden" name="action" value="delete_exam">
-                                    <input type="hidden" name="exam_id"
-                                           value="<?= htmlspecialchars((string) $exam['id']) ?>">
+                            <a class="app-icon-button" href="/edit_exam.php?id=<?= urlencode($examId) ?>" title="Editar">
+                                ✎
+                            </a>
 
-                                    <button class="button is-danger is-light" type="submit">
-                                        🗑
-                                    </button>
-                                </form>
-                            </div>
+                            <form method="post" onsubmit="return confirm('Deseja realmente excluir esta prova?');">
+                                <input type="hidden" name="action" value="delete_exam">
+                                <input type="hidden" name="exam_id" value="<?= htmlspecialchars($examId) ?>">
+
+                                <button class="app-icon-button is-danger" type="submit" title="Excluir">
+                                    🗑
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
-            </div>
+            </article>
         <?php endforeach; ?>
     <?php endif; ?>
 </div>
 
-<div id="upload-box" class="box app-card mt-6">
+<div id="upload-panel" class="app-card upload-panel p-5 mt-6">
     <h2 class="title is-4">Importar nova prova</h2>
-    <p class="has-text-grey mb-4">Envie um CSV no formato esperado para criar uma nova prova.</p>
+    <p class="has-text-grey mb-4">Envie um CSV no formato esperado. A prova será validada e salva no Firestore.</p>
 
     <form method="post" enctype="multipart/form-data">
         <div class="field">
@@ -145,24 +170,59 @@ include __DIR__ . '/layout/header.php';
             </div>
         </div>
 
-        <button class="button app-button-dark" type="submit">Enviar CSV</button>
+        <button class="button app-button-primary" type="submit">
+            Enviar CSV
+        </button>
     </form>
 </div>
 
-<div class="box app-card mt-5">
+<?php if ($parsedExam !== null): ?>
+    <div class="app-card p-5 mt-5">
+        <h2 class="title is-4">Prova importada</h2>
+
+        <div class="columns">
+            <div class="column">
+                <div class="notification is-light">
+                    <strong>Arquivo</strong><br>
+                    <?= htmlspecialchars((string) $uploadedFileName) ?>
+                </div>
+            </div>
+
+            <div class="column">
+                <div class="notification is-light">
+                    <strong>Título</strong><br>
+                    <?= htmlspecialchars((string) $parsedExam->title) ?>
+                </div>
+            </div>
+
+            <div class="column">
+                <div class="notification is-light">
+                    <strong>Questões</strong><br>
+                    <?= $parsedExam->totalQuestions() ?>
+                </div>
+            </div>
+        </div>
+    </div>
+<?php endif; ?>
+
+<div class="app-card p-5 mt-5">
     <h2 class="title is-5">Formato esperado</h2>
     <pre><code>exam_title,question_id,question_type,statement,option_a,option_b,option_c,option_d,correct_answer,explanation</code></pre>
 </div>
 
 <script>
-document.getElementById('exam-search')?.addEventListener('input', function () {
-    const term = this.value.toLowerCase();
+const searchInput = document.getElementById('exam-search');
 
-    document.querySelectorAll('.exam-item').forEach(function (item) {
-        const title = item.querySelector('.exam-title')?.innerText.toLowerCase() || '';
-        item.style.display = title.includes(term) ? '' : 'none';
+if (searchInput) {
+    searchInput.addEventListener('input', function () {
+        const term = this.value.toLowerCase().trim();
+
+        document.querySelectorAll('.exam-item').forEach(function (item) {
+            const title = item.dataset.title || '';
+            item.style.display = title.includes(term) ? '' : 'none';
+        });
     });
-});
+}
 </script>
 
 <?php include __DIR__ . '/layout/footer.php'; ?>
