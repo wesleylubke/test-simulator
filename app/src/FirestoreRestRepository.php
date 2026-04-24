@@ -79,7 +79,7 @@ final class FirestoreRestRepository
         }
     }
 
-    private function request(string $method, string $url, array $payload): array
+    private function request(string $method, string $url, array $payload = []): array
     {
         $token = $this->tokenService->getAccessToken();
 
@@ -88,7 +88,7 @@ final class FirestoreRestRepository
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_CUSTOMREQUEST => $method,
-            CURLOPT_POSTFIELDS => json_encode($payload, JSON_UNESCAPED_UNICODE),
+            CURLOPT_POSTFIELDS => $method === 'GET' ? null : json_encode($payload, JSON_UNESCAPED_UNICODE),
             CURLOPT_HTTPHEADER => [
                 'Authorization: Bearer ' . $token,
                 'Content-Type: application/json',
@@ -173,4 +173,29 @@ final class FirestoreRestRepository
     {
         return array_keys($array) !== range(0, count($array) - 1);
     }
+
+    public function listExams(): array
+{
+    $url = $this->baseUrl . '/exams?pageSize=50';
+
+    $response = $this->request('GET', $url);
+
+    $exams = [];
+
+    foreach (($response['documents'] ?? []) as $document) {
+        $fields = $document['fields'] ?? [];
+        $nameParts = explode('/', $document['name'] ?? '');
+        $id = end($nameParts);
+
+        $exams[] = [
+            'id' => $id,
+            'title' => $fields['title']['stringValue'] ?? '',
+            'total_questions' => (int) ($fields['total_questions']['integerValue'] ?? 0),
+            'status' => $fields['status']['stringValue'] ?? '',
+            'created_at' => $fields['created_at']['timestampValue'] ?? '',
+        ];
+    }
+
+    return $exams;
+}
 }

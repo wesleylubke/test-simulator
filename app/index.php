@@ -10,6 +10,7 @@ use App\ValidationException;
 
 $parser = new CsvExamParser();
 
+$exams = [];
 $parsedExam = null;
 $errorMessage = null;
 $successMessage = null;
@@ -60,6 +61,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } catch (Throwable $e) {
         $errorMessage = $e->getMessage();
     }
+}
+
+try {
+    $credentialsPath = getenv('GOOGLE_APPLICATION_CREDENTIALS');
+
+    if (is_string($credentialsPath) && $credentialsPath !== '') {
+        $tokenService = new GoogleAccessTokenService($credentialsPath);
+        $repository = new FirestoreRestRepository($tokenService);
+        $exams = $repository->listExams();
+    }
+} catch (Throwable $e) {
+    // Não bloqueia a página se a listagem falhar.
 }
 
 include __DIR__ . '/templates/home.php';
