@@ -163,7 +163,7 @@ include __DIR__ . '/layout/header.php';
                 <div class="folder-header mb-3">
                     <button
                         type="button"
-                        class="button is-fullwidth is-justify-content-space-between folder-toggle"
+                        class="folder-toggle"
                         data-target="<?= htmlspecialchars($folderKey) ?>"
                         aria-expanded="false">
                         <span>
@@ -176,8 +176,6 @@ include __DIR__ . '/layout/header.php';
 
                     <?php if ($folderId !== 'no-folder'): ?>
                         <div class="folder-actions">
-
-                            <!-- EDITAR -->
                             <button
                                 type="button"
                                 class="app-button-icon"
@@ -186,21 +184,17 @@ include __DIR__ . '/layout/header.php';
                                 ✎
                             </button>
 
-                            <!-- EXCLUIR -->
-                            <form method="post" class="folder-action-form"
+                            <form
+                                method="post"
+                                class="folder-action-form"
                                 onsubmit="return confirm('Excluir esta pasta? As provas ficarão sem pasta.');">
-
                                 <input type="hidden" name="action" value="delete_folder">
                                 <input type="hidden" name="folder_id" value="<?= htmlspecialchars($folderId) ?>">
 
-                                <button
-                                    class="app-button-icon is-danger"
-                                    type="submit"
-                                    title="Excluir pasta">
+                                <button class="app-button-icon is-danger" type="submit" title="Excluir pasta">
                                     🗑
                                 </button>
                             </form>
-
                         </div>
                     <?php endif; ?>
                 </div>
