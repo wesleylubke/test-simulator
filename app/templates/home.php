@@ -23,7 +23,9 @@ $groupedExams = [];
 
 foreach ($exams as $exam) {
     $folderId = (string) ($exam['folder_id'] ?? '');
-    $folderName = (string) ($exam['folder_name'] ?? 'Sem pasta');
+    $folderName = $folderId !== '' && isset($foldersById[$folderId])
+    ? (string) $foldersById[$folderId]['name']
+    : (string) ($exam['folder_name'] ?? 'Sem pasta');
 
     if ($folderId === '') {
         $folderId = 'no-folder';
