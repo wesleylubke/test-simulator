@@ -202,7 +202,7 @@ include __DIR__ . '/templates/layout/header.php';
     </div>
 <?php elseif ($exam !== null): ?>
 
-    <div class="box">
+    <div class="app-question-card">
         <h1 class="title is-3"><?= htmlspecialchars((string) $exam['title']) ?></h1>
         <p class="subtitle is-6 has-text-grey">
             ID: <?= htmlspecialchars((string) $exam['id']) ?>
@@ -256,7 +256,7 @@ include __DIR__ . '/templates/layout/header.php';
                 $previousAnswer = (string) ($_POST[$fieldName] ?? '');
                 ?>
 
-                <div class="box">
+                <div class="app-question-card">
                     <p class="is-size-7 has-text-grey mb-2">
                         Questão <?= $index + 1 ?>
                         · <?= htmlspecialchars((string) $question['question_id']) ?>
@@ -269,7 +269,7 @@ include __DIR__ . '/templates/layout/header.php';
 
                     <?php if ($question['type'] === 'multiple_choice'): ?>
                         <?php foreach ((array) $question['options'] as $optionKey => $optionValue): ?>
-                            <label class="box mb-2">
+                            <label class="app-option">
                                 <input
                                     type="radio"
                                     name="<?= htmlspecialchars($fieldName) ?>"

@@ -1,5 +1,4 @@
 <?php
-
 declare(strict_types=1);
 
 /** @var App\ParsedExam|null $parsedExam */
@@ -29,57 +28,47 @@ include __DIR__ . '/layout/header.php';
     </div>
 <?php endif; ?>
 
-<div class="level mb-5">
-    <div class="level-left">
-        <div>
-            <h1 class="title is-2 app-page-title">Minhas provas</h1>
-            <p class="app-subtitle">Selecione uma prova para estudar ou importe um novo CSV.</p>
-        </div>
+<header class="app-page-header">
+    <div>
+        <h1 class="app-page-title">Minhas provas</h1>
+        <p class="app-page-subtitle">Selecione uma prova para estudar ou importe um novo CSV.</p>
     </div>
 
-    <div class="level-right desktop-actions">
-        <button
-            class="button app-button-primary"
-            type="button"
-            onclick="document.getElementById('upload-panel').scrollIntoView({behavior: 'smooth'});"
-        >
-            + Nova prova
-        </button>
-    </div>
-</div>
+    <button
+        class="button app-button-primary"
+        type="button"
+        onclick="document.getElementById('upload-panel').scrollIntoView({behavior: 'smooth'});"
+    >
+        + Nova prova
+    </button>
+</header>
 
 <div class="columns mb-5">
     <div class="column">
-        <div class="stat-card">
-            <div class="stat-label">Provas ativas</div>
-            <div class="stat-value"><?= (int) $activeExams ?></div>
+        <div class="app-panel app-stat">
+            <div class="app-stat-label">Provas ativas</div>
+            <div class="app-stat-value"><?= (int) $activeExams ?></div>
         </div>
     </div>
 
     <div class="column">
-        <div class="stat-card">
-            <div class="stat-label">Média geral</div>
-            <div class="stat-value is-success-text"><?= htmlspecialchars((string) $avgScore) ?></div>
+        <div class="app-panel app-stat">
+            <div class="app-stat-label">Média geral</div>
+            <div class="app-stat-value is-success"><?= htmlspecialchars($avgScore) ?></div>
         </div>
     </div>
 </div>
 
 <div class="field mb-5">
     <div class="control has-icons-left">
-        <input
-            id="exam-search"
-            class="input search-input"
-            type="text"
-            placeholder="Buscar provas..."
-            autocomplete="off"
-        >
+        <input id="exam-search" class="input app-search" type="text" placeholder="Buscar provas..." autocomplete="off">
         <span class="icon is-left">⌕</span>
     </div>
 </div>
 
-<div id="exam-list">
+<section id="exam-list" class="mb-6">
     <?php if (empty($exams)): ?>
-        <div class="app-card p-5 has-text-centered">
+        <div class="app-panel p-5 has-text-centered">
             <h2 class="title is-5">Nenhuma prova cadastrada</h2>
             <p class="has-text-grey mb-4">Importe um CSV para começar a estudar.</p>
             <button
@@ -98,34 +87,30 @@ include __DIR__ . '/layout/header.php';
             $status = strtolower((string) ($exam['status'] ?? 'processed'));
 
             $statusClass = match ($status) {
-                'draft' => 'status-draft',
-                'archived' => 'status-archived',
-                'processed' => 'status-processed',
-                default => 'status-published',
+                'draft' => 'is-draft',
+                'archived' => 'is-archived',
+                'processed' => 'is-processed',
+                default => 'is-published',
             };
 
             $statusLabel = match ($status) {
                 'draft' => 'Rascunho',
                 'archived' => 'Arquivada',
-                'processed' => 'Publicada',
-                default => ucfirst($status),
+                default => 'Publicada',
             };
             ?>
 
-            <article class="exam-card mb-4 exam-item" data-title="<?= htmlspecialchars(mb_strtolower($title)) ?>">
-                <div class="columns is-vcentered is-variable is-5">
+            <article class="app-exam-card exam-item" data-title="<?= htmlspecialchars(mb_strtolower($title)) ?>">
+                <div class="columns is-vcentered">
                     <div class="column">
-                        <div class="is-flex is-justify-content-space-between is-align-items-start mb-3">
-                            <h2 class="title is-5 exam-title mb-0">
-                                <?= htmlspecialchars($title) ?>
-                            </h2>
-
-                            <span class="status-pill <?= htmlspecialchars($statusClass) ?>">
+                        <div class="is-flex is-justify-content-space-between is-align-items-start mb-2">
+                            <h2 class="app-exam-title"><?= htmlspecialchars($title) ?></h2>
+                            <span class="app-status <?= htmlspecialchars($statusClass) ?>">
                                 <?= htmlspecialchars($statusLabel) ?>
                             </span>
                         </div>
 
-                        <p class="exam-meta">
+                        <p class="app-exam-meta">
                             ☰ <?= (int) ($exam['total_questions'] ?? 0) ?> questões
                             <span class="mx-2">•</span>
                             Atualizada recentemente
@@ -133,20 +118,19 @@ include __DIR__ . '/layout/header.php';
                     </div>
 
                     <div class="column is-narrow">
-                        <div class="buttons exam-actions">
+                        <div class="buttons app-exam-actions">
                             <a class="button app-button-primary" href="/exam.php?id=<?= urlencode($examId) ?>">
                                 Estudar
                             </a>
 
-                            <a class="app-icon-button" href="/edit_exam.php?id=<?= urlencode($examId) ?>" title="Editar">
+                            <a class="app-button-icon" href="/edit_exam.php?id=<?= urlencode($examId) ?>" title="Editar">
                                 ✎
                             </a>
 
                             <form method="post" onsubmit="return confirm('Deseja realmente excluir esta prova?');">
                                 <input type="hidden" name="action" value="delete_exam">
                                 <input type="hidden" name="exam_id" value="<?= htmlspecialchars($examId) ?>">
-
-                                <button class="app-icon-button is-danger" type="submit" title="Excluir">
+                                <button class="app-button-icon is-danger" type="submit" title="Excluir">
                                     🗑
                                 </button>
                             </form>
@@ -156,9 +140,9 @@ include __DIR__ . '/layout/header.php';
             </article>
         <?php endforeach; ?>
     <?php endif; ?>
-</div>
+</section>
 
-<div id="upload-panel" class="app-card upload-panel p-5 mt-6">
+<section id="upload-panel" class="app-panel app-upload mb-5">
     <h2 class="title is-4">Importar nova prova</h2>
     <p class="has-text-grey mb-4">Envie um CSV no formato esperado. A prova será validada e salva no Firestore.</p>
 
@@ -170,14 +154,12 @@ include __DIR__ . '/layout/header.php';
             </div>
         </div>
 
-        <button class="button app-button-primary" type="submit">
-            Enviar CSV
-        </button>
+        <button class="button app-button-primary" type="submit">Enviar CSV</button>
     </form>
-</div>
+</section>
 
 <?php if ($parsedExam !== null): ?>
-    <div class="app-card p-5 mt-5">
+    <section class="app-panel p-5 mb-5">
         <h2 class="title is-4">Prova importada</h2>
 
         <div class="columns">
@@ -202,13 +184,13 @@ include __DIR__ . '/layout/header.php';
                 </div>
             </div>
         </div>
-    </div>
+    </section>
 <?php endif; ?>
 
-<div class="app-card p-5 mt-5">
+<section class="app-panel p-5">
     <h2 class="title is-5">Formato esperado</h2>
     <pre><code>exam_title,question_id,question_type,statement,option_a,option_b,option_c,option_d,correct_answer,explanation</code></pre>
-</div>
+</section>
 
 <script>
 const searchInput = document.getElementById('exam-search');
