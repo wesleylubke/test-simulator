@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 require_once __DIR__ . '/vendor/autoload.php';
@@ -52,6 +53,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'creat
     }
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'update_folder') {
+    try {
+        $folderId = trim((string) ($_POST['folder_id'] ?? ''));
+        $folderName = trim((string) ($_POST['folder_name'] ?? ''));
+        $folderColor = trim((string) ($_POST['folder_color'] ?? 'blue'));
+
+        if ($folderId === '') {
+            throw new ValidationException('ID da pasta não informado.');
+        }
+
+        if ($folderName === '') {
+            throw new ValidationException('O nome da pasta é obrigatório.');
+        }
+
+        $repository = getRepository();
+        $repository->updateFolder($folderId, $folderName, $folderColor);
+
+        $successMessage = 'Pasta atualizada com sucesso.';
+    } catch (Throwable $e) {
+        $errorMessage = $e->getMessage();
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete_folder') {
+    try {
+        $folderId = trim((string) ($_POST['folder_id'] ?? ''));
+
+        if ($folderId === '') {
+            throw new ValidationException('ID da pasta não informado.');
+        }
+
+        $repository = getRepository();
+        $repository->deleteFolder($folderId);
+
+        $successMessage = 'Pasta excluída com sucesso. As provas permanecem salvas, mas ficarão sem pasta.';
+    } catch (Throwable $e) {
+        $errorMessage = $e->getMessage();
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete_exam') {
     try {
         $examIdToDelete = trim((string) ($_POST['exam_id'] ?? ''));
@@ -71,7 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
 
 if (
     $_SERVER['REQUEST_METHOD'] === 'POST'
-    && !in_array(($_POST['action'] ?? ''), ['delete_exam', 'create_folder'], true)
+    && !in_array(($_POST['action'] ?? ''), ['delete_exam', 'create_folder', 'update_folder', 'delete_folder'], true)
 ) {
     try {
         if (!isset($_FILES['exam_file'])) {

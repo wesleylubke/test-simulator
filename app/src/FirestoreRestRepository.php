@@ -453,4 +453,31 @@ final class FirestoreRestRepository
 
         $this->request('PATCH', $url, $payload);
     }
+
+    public function updateFolder(string $folderId, string $name, string $color = 'blue'): void
+    {
+        $url = $this->baseUrl
+            . '/folders/'
+            . rawurlencode($folderId)
+            . '?updateMask.fieldPaths=name'
+            . '&updateMask.fieldPaths=color'
+            . '&updateMask.fieldPaths=updated_at';
+
+        $payload = [
+            'fields' => [
+                'name' => ['stringValue' => $name],
+                'color' => ['stringValue' => $color],
+                'updated_at' => ['timestampValue' => gmdate('Y-m-d\\TH:i:s\\Z')],
+            ],
+        ];
+
+        $this->request('PATCH', $url, $payload);
+    }
+
+    public function deleteFolder(string $folderId): void
+    {
+        $url = $this->baseUrl . '/folders/' . rawurlencode($folderId);
+
+        $this->request('DELETE', $url);
+    }
 }
