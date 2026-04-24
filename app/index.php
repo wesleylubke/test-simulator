@@ -4,16 +4,17 @@ declare(strict_types=1);
 require_once __DIR__ . '/vendor/autoload.php';
 
 use App\AuthService;
-AuthService::requireLogin();
-
 use App\CsvExamParser;
 use App\FirestoreRestRepository;
 use App\GoogleAccessTokenService;
 use App\ValidationException;
 
+AuthService::requireLogin();
+
 $parser = new CsvExamParser();
 
 $exams = [];
+$folders = [];
 $parsedExam = null;
 $errorMessage = null;
 $successMessage = null;
@@ -33,6 +34,24 @@ function getRepository(): FirestoreRestRepository
     return new FirestoreRestRepository($tokenService);
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'create_folder') {
+    try {
+        $folderName = trim((string) ($_POST['folder_name'] ?? ''));
+        $folderColor = trim((string) ($_POST['folder_color'] ?? 'blue'));
+
+        if ($folderName === '') {
+            throw new ValidationException('O nome da pasta é obrigatório.');
+        }
+
+        $repository = getRepository();
+        $repository->createFolder($folderName, $folderColor);
+
+        $successMessage = 'Pasta criada com sucesso.';
+    } catch (Throwable $e) {
+        $errorMessage = $e->getMessage();
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete_exam') {
     try {
         $examIdToDelete = trim((string) ($_POST['exam_id'] ?? ''));
@@ -50,7 +69,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
     }
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') !== 'delete_exam') {
+if (
+    $_SERVER['REQUEST_METHOD'] === 'POST'
+    && !in_array(($_POST['action'] ?? ''), ['delete_exam', 'create_folder'], true)
+) {
     try {
         if (!isset($_FILES['exam_file'])) {
             throw new ValidationException('Nenhum arquivo foi enviado.');
@@ -92,7 +114,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') !== 'delet
 
 try {
     $repository = getRepository();
+
     $exams = $repository->listExams();
+    $folders = $repository->listFolders();
 } catch (Throwable $e) {
     // Não bloqueia a página se a listagem falhar.
 }
