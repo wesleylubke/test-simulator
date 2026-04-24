@@ -281,4 +281,39 @@ final class FirestoreRestRepository
 
     return $attempts;
 }
+
+public function getExam(string $examId): array
+{
+    $url = $this->baseUrl . '/exams/' . rawurlencode($examId);
+
+    $response = $this->request('GET', $url);
+
+    $fields = $response['fields'] ?? [];
+
+    return [
+        'id' => $examId,
+        'title' => $fields['title']['stringValue'] ?? '',
+        'total_questions' => (int) ($fields['total_questions']['integerValue'] ?? 0),
+        'status' => $fields['status']['stringValue'] ?? '',
+        'created_at' => $fields['created_at']['timestampValue'] ?? '',
+    ];
+}
+
+public function updateExamTitle(string $examId, string $title): void
+{
+    $url = $this->baseUrl
+        . '/exams/'
+        . rawurlencode($examId)
+        . '?updateMask.fieldPaths=title&updateMask.fieldPaths=updated_at';
+
+    $payload = [
+        'fields' => [
+            'title' => ['stringValue' => $title],
+            'updated_at' => ['timestampValue' => gmdate('Y-m-d\\TH:i:s\\Z')],
+        ],
+    ];
+
+    $this->request('PATCH', $url, $payload);
+}
+
 }
