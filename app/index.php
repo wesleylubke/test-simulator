@@ -4,13 +4,17 @@ declare(strict_types=1);
 require_once __DIR__ . '/vendor/autoload.php';
 
 use App\CsvExamParser;
+use App\FirestoreRestRepository;
+use App\GoogleAccessTokenService;
 use App\ValidationException;
 
 $parser = new CsvExamParser();
+
 $parsedExam = null;
 $errorMessage = null;
 $successMessage = null;
 $uploadedFileName = null;
+$examId = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
@@ -32,12 +36,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $tmpName = (string) ($file['tmp_name'] ?? '');
+
         if ($tmpName === '' || !is_uploaded_file($tmpName)) {
             throw new ValidationException('Arquivo temporário de upload inválido.');
         }
 
         $parsedExam = $parser->parse($tmpName);
-        $successMessage = 'Arquivo importado e validado com sucesso.';
+
+        $credentialsPath = getenv('GOOGLE_APPLICATION_CREDENTIALS');
+        if (!is_string($credentialsPath) || $credentialsPath === '') {
+            throw new ValidationException('Variável GOOGLE_APPLICATION_CREDENTIALS não configurada.');
+        }
+
+        $tokenService = new GoogleAccessTokenService($credentialsPath);
+        $repository = new FirestoreRestRepository($tokenService);
+
+        $csvPath = 'upload/' . date('Y/m/d/') . basename($uploadedFileName);
+
+        $examId = $repository->saveExam($parsedExam, $csvPath);
+        $repository->saveQuestions($examId, $parsedExam->questions);
+
+        $successMessage = "Arquivo validado e salvo com sucesso. ID da prova: {$examId}";
     } catch (Throwable $e) {
         $errorMessage = $e->getMessage();
     }
