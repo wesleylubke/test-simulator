@@ -176,21 +176,29 @@ include __DIR__ . '/layout/header.php';
 
                     <?php if ($folderId !== 'no-folder'): ?>
                         <div class="buttons ml-3">
+
+                            <!-- EDITAR -->
                             <button
                                 type="button"
-                                class="button is-small is-light"
+                                class="app-button-icon"
+                                title="Editar pasta"
                                 onclick="document.getElementById('edit-folder-<?= htmlspecialchars($folderId) ?>').classList.toggle('is-hidden')">
-                                Editar
+                                ✎
                             </button>
 
+                            <!-- EXCLUIR -->
                             <form method="post" onsubmit="return confirm('Excluir esta pasta? As provas ficarão sem pasta.');">
                                 <input type="hidden" name="action" value="delete_folder">
                                 <input type="hidden" name="folder_id" value="<?= htmlspecialchars($folderId) ?>">
 
-                                <button class="button is-small is-danger is-light" type="submit">
-                                    Excluir
+                                <button
+                                    class="app-button-icon is-danger"
+                                    type="submit"
+                                    title="Excluir pasta">
+                                    🗑
                                 </button>
                             </form>
+
                         </div>
                     <?php endif; ?>
                 </div>
