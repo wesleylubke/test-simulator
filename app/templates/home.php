@@ -10,29 +10,10 @@ declare(strict_types=1);
 
 $exams = $exams ?? [];
 ?>
-<!DOCTYPE html>
-<html lang="pt-BR">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Simulator</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
-</head>
-
-<body>
-
-<!-- NAVBAR -->
-<nav class="navbar is-dark">
-    <div class="navbar-brand">
-        <a class="navbar-item" href="/index.php">
-            <strong>Test Simulator</strong>
-        </a>
-    </div>
-</nav>
-
-<section class="section">
-    <div class="container">
+<?php
+$pageTitle = 'Test Simulator';
+include __DIR__ . '/layout/header.php';
+?>
 
         <!-- ALERTS -->
         <?php if ($successMessage !== null): ?>
@@ -138,8 +119,5 @@ $exams = $exams ?? [];
             </div>
         <?php endif; ?>
 
-    </div>
-</section>
-
-</body>
-</html>
+    
+        <?php include __DIR__ . '/layout/footer.php'; ?>
