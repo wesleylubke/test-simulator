@@ -1,41 +1,56 @@
 :root {
-    --bg: #f7f9fc;
-    --surface: #ffffff;
-    --surface-soft: #f3f6fa;
-    --text: #334155;
-    --muted: #728096;
-    --border: #e3e8ef;
-    --dark: #354155;
-    --dark-hover: #263244;
-    --green: #18b77b;
-    --red: #ef4444;
-    --blue: #3b82f6;
-    --shadow: 0 10px 28px rgba(15, 23, 42, 0.07);
+    --bg: #f4f6f9;
+    --card: #ffffff;
+    --text: #263244;
+    --muted: #6b7280;
+    --border: #d9dee8;
+    --primary: #111827;
+    --primary-hover: #1f2937;
+    --success: #10b981;
+    --danger: #ef4444;
+    --shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
 }
 
 html,
 body {
-    background: var(--bg);
-    color: var(--text);
-}
-
-body {
+    background: var(--bg) !important;
+    color: var(--text) !important;
     min-height: 100vh;
 }
 
+body,
+button,
+input,
+select,
+textarea {
+    font-family: Inter, Arial, Helvetica, sans-serif;
+}
+
+.title,
+.subtitle,
+.label,
+.content,
+p,
+strong {
+    color: var(--text) !important;
+}
+
+.has-text-grey {
+    color: var(--muted) !important;
+}
+
 .app-navbar {
-    background: var(--surface);
+    background: #ffffff !important;
     border-bottom: 1px solid var(--border);
-    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.03);
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
 }
 
 .app-navbar .navbar-item {
-    color: var(--text);
+    color: var(--text) !important;
 }
 
 .app-navbar .navbar-item:hover {
-    background: var(--surface-soft);
-    color: var(--text);
+    background: #f8fafc !important;
 }
 
 .app-shell {
@@ -44,74 +59,63 @@ body {
 }
 
 .app-page-title {
+    font-size: 2.35rem;
     font-weight: 800;
-    letter-spacing: -0.03em;
-    color: var(--dark);
+    letter-spacing: -0.04em;
+    color: var(--text) !important;
 }
 
 .app-subtitle {
-    color: var(--muted);
-    margin-top: -0.5rem;
+    color: var(--muted) !important;
+    font-size: 1rem;
 }
 
-.app-card {
-    background: var(--surface);
+.app-card,
+.exam-card,
+.stat-card {
+    background: var(--card) !important;
     border: 1px solid var(--border);
-    border-radius: 18px;
+    border-radius: 16px;
     box-shadow: var(--shadow);
 }
 
 .stat-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 18px;
-    padding: 1.45rem;
+    padding: 1.5rem;
     text-align: center;
-    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.045);
 }
 
 .stat-label {
     color: var(--muted);
     font-size: 0.9rem;
-    margin-bottom: 0.45rem;
+    margin-bottom: 0.4rem;
 }
 
 .stat-value {
-    color: var(--dark);
     font-size: 2rem;
     line-height: 1;
     font-weight: 800;
+    color: var(--text);
 }
 
 .stat-value.is-success-text {
-    color: var(--green);
-}
-
-.search-input {
-    height: 3.1rem;
-    border-radius: 14px;
-    border-color: var(--border);
-    box-shadow: none;
+    color: var(--success);
 }
 
 .exam-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 18px;
-    padding: 1.35rem;
-    box-shadow: var(--shadow);
-    transition: transform 160ms ease, box-shadow 160ms ease;
+    padding: 1.25rem 1.4rem;
+    margin-bottom: 1rem;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .exam-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.10);
+    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.12);
 }
 
 .exam-title {
-    color: var(--dark);
+    color: var(--text) !important;
     font-weight: 800;
-    letter-spacing: -0.015em;
+    margin-bottom: 0.5rem !important;
 }
 
 .exam-meta {
@@ -138,58 +142,80 @@ body {
 
 .status-draft {
     background: #eef2f7;
-    color: #5b6678;
+    color: #4b5563;
 }
 
 .status-archived {
-    background: var(--dark);
-    color: #fff;
+    background: var(--primary);
+    color: #ffffff;
 }
 
 .app-button-primary {
-    background: var(--dark);
-    border-color: var(--dark);
-    color: #fff;
-    border-radius: 10px;
+    background: var(--primary) !important;
+    border-color: var(--primary) !important;
+    color: #ffffff !important;
+    border-radius: 8px;
     font-weight: 700;
 }
 
 .app-button-primary:hover {
-    background: var(--dark-hover);
-    border-color: var(--dark-hover);
-    color: #fff;
+    background: var(--primary-hover) !important;
+    border-color: var(--primary-hover) !important;
+    color: #ffffff !important;
 }
 
 .app-icon-button {
-    width: 2.4rem;
-    height: 2.4rem;
-    border-radius: 10px;
+    width: 2.45rem;
+    height: 2.45rem;
+    border-radius: 8px;
     border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--dark);
+    background: #ffffff;
+    color: var(--text);
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    cursor: pointer;
 }
 
 .app-icon-button:hover {
-    background: var(--surface-soft);
-    color: var(--dark);
+    background: #f8fafc;
 }
 
 .app-icon-button.is-danger {
-    color: var(--red);
+    color: var(--danger);
 }
 
-.app-icon-button.is-danger:hover {
-    background: #fef2f2;
-    color: var(--red);
+.input,
+.textarea,
+.select select {
+    background: #ffffff !important;
+    color: var(--text) !important;
+    border-color: var(--border) !important;
+    box-shadow: none !important;
+}
+
+.input::placeholder {
+    color: #9ca3af !important;
+}
+
+.search-input {
+    height: 3rem;
+    border-radius: 12px;
 }
 
 .upload-panel {
+    padding: 1.75rem;
     border: 1px dashed #cbd5e1;
-    border-radius: 18px;
-    background: #fbfdff;
+}
+
+pre {
+    background: #111827 !important;
+    color: #e5e7eb !important;
+    border-radius: 10px;
+}
+
+pre code {
+    color: #e5e7eb !important;
 }
 
 .bottom-nav {
@@ -205,6 +231,10 @@ body {
         display: none !important;
     }
 
+    .app-page-title {
+        font-size: 1.85rem;
+    }
+
     .exam-card {
         padding: 1.1rem;
     }
@@ -214,7 +244,7 @@ body {
     }
 
     .exam-actions .button {
-        flex: 1;
+        width: 100%;
     }
 
     .bottom-nav {
@@ -224,7 +254,7 @@ body {
         left: 0;
         right: 0;
         bottom: 0;
-        background: var(--surface);
+        background: #ffffff;
         border-top: 1px solid var(--border);
         justify-content: space-around;
         padding: 0.55rem 0 0.45rem;
@@ -234,14 +264,15 @@ body {
         color: var(--muted);
         font-size: 0.8rem;
         text-align: center;
+        text-decoration: none;
     }
 
     .bottom-nav a.is-active {
-        color: var(--dark);
+        color: var(--text);
         font-weight: 800;
     }
 
     body {
-        padding-bottom: 70px;
+        padding-bottom: 72px;
     }
 }
