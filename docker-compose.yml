@@ -8,5 +8,6 @@ services:
     environment:
       GOOGLE_CLOUD_PROJECT: "fluent-night-466117-d2"
       GOOGLE_APPLICATION_CREDENTIALS: "/var/www/html/credentials.json"
+      FIREBASE_API_KEY: "AIzaSyBqWDbLJ7TXe5iNSUliKp4jLceNwmsEu5Y"
     volumes:
       - /opt/test-simulator/app/credentials.json:/var/www/html/credentials.json:ro
