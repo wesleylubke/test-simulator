@@ -192,8 +192,16 @@ $pageTitle = (string) ($exam['title'] ?? 'Prova') . ' - Test Simulator';
 include __DIR__ . '/templates/layout/header.php';
 ?>
 
-<div class="mb-5">
-    <a class="button is-light" href="/index.php">← Voltar para provas</a>
+<div class="mb-5 buttons">
+    <a class="button is-light" href="/index.php">
+        ← Voltar para provas
+    </a>
+
+    <?php if ($examId !== ''): ?>
+        <a class="button app-button-primary" href="/edit_exam.php?id=<?= urlencode($examId) ?>">
+            Editar prova
+        </a>
+    <?php endif; ?>
 </div>
 
 <?php if ($errorMessage !== null): ?>
