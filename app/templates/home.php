@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 /** @var App\ParsedExam|null $parsedExam */
@@ -24,8 +25,8 @@ $groupedExams = [];
 foreach ($exams as $exam) {
     $folderId = (string) ($exam['folder_id'] ?? '');
     $folderName = $folderId !== '' && isset($foldersById[$folderId])
-    ? (string) $foldersById[$folderId]['name']
-    : (string) ($exam['folder_name'] ?? 'Sem pasta');
+        ? (string) $foldersById[$folderId]['name']
+        : (string) ($exam['folder_name'] ?? 'Sem pasta');
 
     if ($folderId === '') {
         $folderId = 'no-folder';
@@ -36,7 +37,9 @@ foreach ($exams as $exam) {
         $groupedExams[$folderId] = [
             'id' => $folderId,
             'name' => $folderName,
-            'color' => $foldersById[$folderId]['color'] ?? 'blue',
+            'color' => $folderId !== 'no-folder' && isset($foldersById[$folderId])
+                ? (string) ($foldersById[$folderId]['color'] ?? 'blue')
+                : 'blue',
             'exams' => [],
         ];
     }
@@ -71,8 +74,7 @@ include __DIR__ . '/layout/header.php';
     <button
         class="button app-button-primary"
         type="button"
-        onclick="document.getElementById('upload-panel').scrollIntoView({behavior: 'smooth'});"
-    >
+        onclick="document.getElementById('upload-panel').scrollIntoView({behavior: 'smooth'});">
         + Nova prova
     </button>
 </header>
@@ -112,8 +114,7 @@ include __DIR__ . '/layout/header.php';
                 type="text"
                 name="folder_name"
                 placeholder="Ex: Biologia, História, Matemática"
-                required
-            >
+                required>
         </div>
 
         <div class="column is-narrow">
@@ -131,8 +132,7 @@ include __DIR__ . '/layout/header.php';
             class="input app-search"
             type="text"
             placeholder="Buscar provas..."
-            autocomplete="off"
-        >
+            autocomplete="off">
         <span class="icon is-left">⌕</span>
     </div>
 </div>
@@ -146,8 +146,7 @@ include __DIR__ . '/layout/header.php';
             <button
                 class="button app-button-primary"
                 type="button"
-                onclick="document.getElementById('upload-panel').scrollIntoView({behavior: 'smooth'});"
-            >
+                onclick="document.getElementById('upload-panel').scrollIntoView({behavior: 'smooth'});">
                 Importar primeira prova
             </button>
         </div>
@@ -166,8 +165,7 @@ include __DIR__ . '/layout/header.php';
                         type="button"
                         class="button is-fullwidth is-justify-content-space-between folder-toggle"
                         data-target="<?= htmlspecialchars($folderKey) ?>"
-                        aria-expanded="false"
-                    >
+                        aria-expanded="false">
                         <span>
                             <strong><?= htmlspecialchars($folderName) ?></strong>
                             <span class="tag is-dark ml-2"><?= count($folderExams) ?> provas</span>
@@ -181,8 +179,7 @@ include __DIR__ . '/layout/header.php';
                             <button
                                 type="button"
                                 class="button is-small is-light"
-                                onclick="document.getElementById('edit-folder-<?= htmlspecialchars($folderId) ?>').classList.toggle('is-hidden')"
-                            >
+                                onclick="document.getElementById('edit-folder-<?= htmlspecialchars($folderId) ?>').classList.toggle('is-hidden')">
                                 Editar
                             </button>
 
@@ -210,8 +207,7 @@ include __DIR__ . '/layout/header.php';
                                     type="text"
                                     name="folder_name"
                                     value="<?= htmlspecialchars($folderName) ?>"
-                                    required
-                                >
+                                    required>
                             </div>
 
                             <div class="column is-narrow">
@@ -344,44 +340,44 @@ include __DIR__ . '/layout/header.php';
 </section>
 
 <script>
-document.querySelectorAll('.folder-toggle').forEach(function (button) {
-    button.addEventListener('click', function () {
-        const targetId = button.dataset.target;
-        const content = document.getElementById(targetId);
-        const arrow = button.querySelector('.folder-arrow');
+    document.querySelectorAll('.folder-toggle').forEach(function(button) {
+        button.addEventListener('click', function() {
+            const targetId = button.dataset.target;
+            const content = document.getElementById(targetId);
+            const arrow = button.querySelector('.folder-arrow');
 
-        if (!content) {
-            return;
-        }
+            if (!content) {
+                return;
+            }
 
-        const isHidden = content.style.display === 'none';
+            const isHidden = content.style.display === 'none';
 
-        content.style.display = isHidden ? '' : 'none';
-        button.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+            content.style.display = isHidden ? '' : 'none';
+            button.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
 
-        if (arrow) {
-            arrow.textContent = isHidden ? '▼' : '▶';
-        }
-    });
-});
-
-const searchInput = document.getElementById('exam-search');
-
-if (searchInput) {
-    searchInput.addEventListener('input', function () {
-        const term = this.value.toLowerCase().trim();
-
-        document.querySelectorAll('.exam-item').forEach(function (item) {
-            const title = item.dataset.title || '';
-            item.style.display = title.includes(term) ? '' : 'none';
-        });
-
-        document.querySelectorAll('.folder-group').forEach(function (folder) {
-            const visibleItems = folder.querySelectorAll('.exam-item:not([style*="display: none"])');
-            folder.style.display = visibleItems.length > 0 || term === '' ? '' : 'none';
+            if (arrow) {
+                arrow.textContent = isHidden ? '▼' : '▶';
+            }
         });
     });
-}
+
+    const searchInput = document.getElementById('exam-search');
+
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const term = this.value.toLowerCase().trim();
+
+            document.querySelectorAll('.exam-item').forEach(function(item) {
+                const title = item.dataset.title || '';
+                item.style.display = title.includes(term) ? '' : 'none';
+            });
+
+            document.querySelectorAll('.folder-group').forEach(function(folder) {
+                const visibleItems = folder.querySelectorAll('.exam-item:not([style*="display: none"])');
+                folder.style.display = visibleItems.length > 0 || term === '' ? '' : 'none';
+            });
+        });
+    }
 </script>
 
 <?php include __DIR__ . '/layout/footer.php'; ?>
