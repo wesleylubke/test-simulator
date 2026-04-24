@@ -428,6 +428,36 @@ pre code {
     font-weight: 800;
 }
 
+.folder-header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.folder-toggle {
+    width: 100%;
+    min-width: 0;
+}
+
+.folder-actions {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+}
+
+.folder-action-form {
+    margin: 0 !important;
+    display: inline-flex;
+}
+
+.folder-actions .app-button-icon {
+    flex: 0 0 auto;
+}
+
 @media (max-width: 768px) {
     body {
         padding-bottom: 72px;

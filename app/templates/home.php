@@ -160,7 +160,7 @@ include __DIR__ . '/layout/header.php';
             ?>
 
             <section class="app-panel p-4 mb-5 folder-group">
-                <div class="is-flex is-justify-content-space-between is-align-items-center mb-3">
+                <<div class="folder-header mb-3">
                     <button
                         type="button"
                         class="button is-fullwidth is-justify-content-space-between folder-toggle"
