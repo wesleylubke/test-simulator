@@ -6,3 +6,4 @@ node_modules/
 app/uploads/*
 !app/uploads/.gitkeep
 app/credentials.json
+NOTAS.md
