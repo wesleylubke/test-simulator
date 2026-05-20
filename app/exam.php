@@ -284,7 +284,8 @@ include __DIR__ . '/templates/layout/header.php';
                                     value="<?= htmlspecialchars((string) $optionKey) ?>"
                                     <?= $previousAnswer === (string) $optionKey ? 'checked' : '' ?>>
                                 <strong><?= htmlspecialchars((string) $optionKey) ?>.</strong>
-                                <?= htmlspecialchars((string) $optionValue) ?>
+                                <?= htmlspecialchars((string) (($question['options'] ?? [])[$optionKey] ?? '')) ?>
+
                             </label>
                         <?php endforeach; ?>
                     <?php elseif ($question['type'] === 'fill_blank'): ?>
