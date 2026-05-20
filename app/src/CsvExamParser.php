@@ -42,6 +42,12 @@ final class CsvExamParser
                 throw new ValidationException('O arquivo CSV está vazio.');
             }
 
+            $headerRow = $this->normalizeCsvRow($headerRow);
+
+            if (isset($headerRow[0])) {
+                $headerRow[0] = $this->removeUtf8Bom((string) $headerRow[0]);
+            }
+
             $headers = array_map([$this, 'normalizeHeader'], $headerRow);
             $this->validateHeaders($headers);
 
@@ -53,6 +59,8 @@ final class CsvExamParser
 
             while (($row = fgetcsv($handle)) !== false) {
                 $lineNumber++;
+
+                $row = $this->normalizeCsvRow($row);
 
                 if ($this->isEmptyRow($row)) {
                     continue;
@@ -136,6 +144,29 @@ final class CsvExamParser
     }
 
     /**
+     * Corrige CSVs exportados com a linha inteira entre aspas ou como uma única coluna.
+     *
+     * Exemplo problemático:
+     * "exam_title,question_id,question_type,..."
+     *
+     * @param array<int, string|null> $row
+     * @return array<int, string|null>
+     */
+    private function normalizeCsvRow(array $row): array
+    {
+        if (count($row) === 1 && isset($row[0]) && is_string($row[0]) && str_contains($row[0], ',')) {
+            return str_getcsv($row[0]);
+        }
+
+        return $row;
+    }
+
+    private function removeUtf8Bom(string $value): string
+    {
+        return preg_replace('/^\xEF\xBB\xBF/', '', $value) ?? $value;
+    }
+
+    /**
      * @param string[] $headers
      */
     private function validateHeaders(array $headers): void
@@ -201,7 +232,7 @@ final class CsvExamParser
 
     private function normalizeHeader(string $header): string
     {
-        return strtolower(trim($header));
+        return strtolower(trim($this->removeUtf8Bom($header)));
     }
 
     /**
