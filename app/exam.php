@@ -276,7 +276,7 @@ include __DIR__ . '/templates/layout/header.php';
                     </h2>
 
                     <?php if ($question['type'] === 'multiple_choice'): ?>
-                        <?php foreach ((array) $question['options'] as $optionKey => $optionValue): ?>
+<?php foreach (['A', 'B', 'C', 'D'] as $optionKey): ?>
                             <label class="app-option">
                                 <input
                                     type="radio"
