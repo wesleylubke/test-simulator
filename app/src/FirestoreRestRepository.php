@@ -300,8 +300,9 @@ final class FirestoreRestRepository
 
         usort(
             $attempts,
-            static fn(array $a, array $b): int => strcmp((string) $b['created_at'], (string) $a['created_at'])
+            static fn(array $a, array $b): int => (string) ($b['created_at'] ?? '') <=> (string) ($a['created_at'] ?? '')
         );
+
 
         return $attempts;
     }
@@ -410,17 +411,38 @@ final class FirestoreRestRepository
             $options = [];
         }
 
+        // Validações de consistência para evitar gravação inconsistente (ex: múltipla escolha sem A/B/C/D)
+        $correctAnswer = (string) ($question['correct_answer'] ?? '');
+        $statement = (string) ($question['statement'] ?? '');
+        $explanation = (string) ($question['explanation'] ?? '');
+
+        if ($type === 'multiple_choice') {
+            foreach (['A', 'B', 'C', 'D'] as $k) {
+                if (!isset($options[$k]) || (string) $options[$k] === '') {
+                    throw new ValidationException("Opção {$k} da questão {$questionId} não informada.");
+                }
+            }
+
+            if ($correctAnswer !== '' && !in_array($correctAnswer, ['A', 'B', 'C', 'D'], true)) {
+                throw new ValidationException("Resposta correta inválida para questão {$questionId}.");
+            }
+        } elseif ($type === 'fill_blank') {
+            // para fill_blank, options não deve ser persistida
+            $options = [];
+        }
+
         $payload = [
             'fields' => [
-                'statement' => ['stringValue' => (string) $question['statement']],
+                'statement' => ['stringValue' => $statement],
                 'options' => $this->toFirestoreValue($options),
-                'correct_answer' => ['stringValue' => (string) $question['correct_answer']],
-                'explanation' => ['stringValue' => (string) $question['explanation']],
+                'correct_answer' => ['stringValue' => $correctAnswer],
+                'explanation' => ['stringValue' => $explanation],
             ],
         ];
 
         $this->request('PATCH', $url, $payload);
     }
+
 
     public function createFolder(string $name, string $color = 'blue'): string
     {

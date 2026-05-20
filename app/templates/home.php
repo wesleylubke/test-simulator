@@ -364,7 +364,7 @@ document.querySelectorAll('.folder-toggle').forEach(function (button) {
 
         if (!content) return;
 
-        const isHidden = content.style.display === 'none';
+        const isHidden = window.getComputedStyle(content).display === 'none';
 
         content.style.display = isHidden ? '' : 'none';
         button.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
@@ -381,17 +381,20 @@ if (searchInput) {
     searchInput.addEventListener('input', function () {
         const term = this.value.toLowerCase().trim();
 
+        // Controle via classe para não depender de style inline
         document.querySelectorAll('.exam-item').forEach(function (item) {
             const title = item.dataset.title || '';
-            item.style.display = title.includes(term) ? '' : 'none';
+            const shouldShow = title.includes(term);
+            item.classList.toggle('is-hidden', !shouldShow && term !== '');
         });
 
         document.querySelectorAll('.folder-group').forEach(function (folder) {
-            const visibleItems = folder.querySelectorAll('.exam-item:not([style*="display: none"])');
-            folder.style.display = visibleItems.length > 0 || term === '' ? '' : 'none';
+            const hasVisibleItems = folder.querySelectorAll('.exam-item:not(.is-hidden)').length > 0;
+            folder.style.display = hasVisibleItems || term === '' ? '' : 'none';
         });
     });
 }
+
 </script>
 
 <?php include __DIR__ . '/layout/footer.php'; ?>
