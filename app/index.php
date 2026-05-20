@@ -147,7 +147,10 @@ if (
         $examId = $repository->saveExam($parsedExam, $csvPath);
         $repository->saveQuestions($examId, $parsedExam->questions);
 
-        $successMessage = "Arquivo validado e salvo com sucesso. ID da prova: {$examId}";
+        // PRG: evita reenvio do formulário e força recarregar a lista do Firestore.
+        $_SESSION['flash_success'] = "Arquivo validado e salvo com sucesso. ID da prova: {$examId}";
+        header('Location: /index.php');
+        exit;
     } catch (Throwable $e) {
         $errorMessage = $e->getMessage();
     }
@@ -162,4 +165,14 @@ try {
     // Não bloqueia a página se a listagem falhar.
 }
 
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
+
+if (isset($_SESSION['flash_success'])) {
+    $successMessage = (string) $_SESSION['flash_success'];
+    unset($_SESSION['flash_success']);
+}
+
 include __DIR__ . '/templates/home.php';
+
