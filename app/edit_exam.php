@@ -116,6 +116,7 @@ try {
             }
 
             $repo->updateQuestion($examId, (string) $questionId, [
+                'type' => $type,
                 'statement' => $statement,
                 'options' => $options,
                 'correct_answer' => $correctAnswer,

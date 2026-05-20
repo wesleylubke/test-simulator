@@ -35,6 +35,10 @@ final class FirestoreRestRepository
                 'csv_path' => ['stringValue' => $csvPath],
                 'status' => ['stringValue' => 'processed'],
                 'is_deleted' => ['booleanValue' => false],
+
+                // defaults para consistência no agrupamento por pasta
+                'folder_id' => ['stringValue' => ''],
+                'folder_name' => ['stringValue' => 'Sem pasta'],
             ]
         ];
 
@@ -54,17 +58,35 @@ final class FirestoreRestRepository
     public function saveQuestions(string $examId, array $questions): void
     {
         foreach ($questions as $question) {
-            $questionId = (string) $question['question_id'];
+            $questionId = (string) ($question['question_id'] ?? '');
+            if ($questionId === '') {
+                throw new ValidationException('question_id da questão não informado para salvar no Firestore.');
+            }
+
+            $options = is_array($question['options'] ?? null) ? (array) $question['options'] : [];
+
+            // Garantir shape estável para múltipla escolha: options como map {A,B,C,D}
+            if (($question['question_type'] ?? '') === 'multiple_choice') {
+                $options = [
+                    'A' => isset($options['A']) ? (string) $options['A'] : '',
+                    'B' => isset($options['B']) ? (string) $options['B'] : '',
+                    'C' => isset($options['C']) ? (string) $options['C'] : '',
+                    'D' => isset($options['D']) ? (string) $options['D'] : '',
+                ];
+            } else {
+                // fill_blank não utiliza opções
+                $options = [];
+            }
 
             $payload = [
                 'fields' => [
                     'question_id' => ['stringValue' => $questionId],
-                    'statement' => ['stringValue' => (string) $question['statement']],
-                    'type' => ['stringValue' => (string) $question['question_type']],
-                    'options' => $this->toFirestoreValue((array) $question['options']),
-                    'correct_answer' => ['stringValue' => (string) $question['correct_answer']],
-                    'explanation' => ['stringValue' => (string) $question['explanation']],
-                    'order_index' => ['integerValue' => (string) $question['order_index']],
+                    'statement' => ['stringValue' => (string) ($question['statement'] ?? '')],
+                    'type' => ['stringValue' => (string) ($question['question_type'] ?? '')],
+                    'options' => $this->toFirestoreValue($options),
+                    'correct_answer' => ['stringValue' => (string) ($question['correct_answer'] ?? '')],
+                    'explanation' => ['stringValue' => (string) ($question['explanation'] ?? '')],
+                    'order_index' => ['integerValue' => (string) ($question['order_index'] ?? 0)],
                 ]
             ];
 
@@ -370,10 +392,28 @@ final class FirestoreRestRepository
             . '&updateMask.fieldPaths=correct_answer'
             . '&updateMask.fieldPaths=explanation';
 
+        // Garantir shape estável para múltipla escolha: options como map {A,B,C,D}
+        $options = is_array($question['options'] ?? null) ? (array) $question['options'] : [];
+
+        // Tipo vem do payload do edit_exam.php: é enviado como hidden em questions[...][type]
+        // e no request ele chega como $question['type'].
+        $type = (string) ($question['type'] ?? '');
+
+        if ($type === 'multiple_choice') {
+            $options = [
+                'A' => isset($options['A']) ? (string) $options['A'] : '',
+                'B' => isset($options['B']) ? (string) $options['B'] : '',
+                'C' => isset($options['C']) ? (string) $options['C'] : '',
+                'D' => isset($options['D']) ? (string) $options['D'] : '',
+            ];
+        } else {
+            $options = [];
+        }
+
         $payload = [
             'fields' => [
                 'statement' => ['stringValue' => (string) $question['statement']],
-                'options' => $this->toFirestoreValue((array) $question['options']),
+                'options' => $this->toFirestoreValue($options),
                 'correct_answer' => ['stringValue' => (string) $question['correct_answer']],
                 'explanation' => ['stringValue' => (string) $question['explanation']],
             ],
