@@ -349,9 +349,11 @@ include __DIR__ . '/templates/layout/header.php';
 
                 const res = await fetch('/api/submit_attempt.php', {
                     method: 'POST',
+                    credentials: 'same-origin',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
+
 
                 const data = await res.json().catch(() => null);
 

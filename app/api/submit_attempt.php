@@ -39,7 +39,6 @@ if ($examId === '') {
 }
 
 if ($examTitle === '') {
-    // Permitimos vazio, mas a UI vai preferir titulo.
     $examTitle = 'Prova';
 }
 
@@ -70,15 +69,12 @@ try {
             continue;
         }
 
-
         $questionId = (string) ($answer['questionId'] ?? '');
         $userAnswer = (string) ($answer['userAnswer'] ?? '');
         $correctAnswer = (string) ($answer['correctAnswer'] ?? '');
         $isCorrect = (bool) ($answer['isCorrect'] ?? false);
 
-        // O Firestore espera o identificador por question_id
         if ($questionId === '') {
-            // Se vier vazio, tenta pelo index (fallback)
             $questionId = (string) $index;
         }
 
