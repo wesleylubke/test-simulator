@@ -136,52 +136,11 @@ try {
     );
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        foreach ($questions as $index => $question) {
-            $userAnswer = trim((string) ($_POST['answer_' . $index] ?? ''));
-            $correctAnswer = trim((string) $question['correct_answer']);
-
-            $isCorrect = mb_strtolower($userAnswer) === mb_strtolower($correctAnswer);
-
-            $isCorrect ? $totalCorrect++ : $totalWrong++;
-
-            $results[$index] = [
-                'user_answer' => $userAnswer,
-                'correct_answer' => $correctAnswer,
-                'is_correct' => $isCorrect,
-            ];
-        }
-
-        $credentialsPath = getenv('GOOGLE_APPLICATION_CREDENTIALS');
-
-        if (!is_string($credentialsPath) || $credentialsPath === '') {
-            throw new RuntimeException('Variável GOOGLE_APPLICATION_CREDENTIALS não configurada.');
-        }
-
-        $tokenService = new GoogleAccessTokenService($credentialsPath);
-        $repository = new FirestoreRestRepository($tokenService);
-
-        $answersToSave = [];
-
-        foreach ($questions as $index => $question) {
-            $answersToSave[(string) $question['question_id']] = [
-                'question_id' => (string) $question['question_id'],
-                'user_answer' => (string) ($results[$index]['user_answer'] ?? ''),
-                'correct_answer' => (string) ($results[$index]['correct_answer'] ?? ''),
-                'is_correct' => (bool) ($results[$index]['is_correct'] ?? false),
-            ];
-        }
-
-        $attemptId = $repository->saveAttempt(
-            $examId,
-            (string) $exam['title'],
-            count($questions),
-            $totalCorrect,
-            $totalWrong,
-            $answersToSave
-        );
-
-        $attemptMessage = "Tentativa salva com sucesso. ID: {$attemptId}";
+        // Agora o envio de tentativa é feito via AJAX/JSON (ver JS no final do arquivo).
+        // Mantemos este bloco apenas para compatibilidade, mas não salva via POST tradicional.
+        // Qualquer POST inesperado pode ser ignorado.
     }
+
 } catch (Throwable $e) {
     $errorMessage = $e->getMessage();
 }
@@ -257,7 +216,8 @@ include __DIR__ . '/templates/layout/header.php';
             Nenhuma questão encontrada para esta prova.
         </div>
     <?php else: ?>
-        <form method="post">
+        <form id="exam-form" onsubmit="return false;">
+
             <?php foreach ($questions as $index => $question): ?>
                 <?php
                 $fieldName = 'answer_' . $index;
@@ -332,7 +292,8 @@ include __DIR__ . '/templates/layout/header.php';
             <?php endforeach; ?>
 
             <div class="buttons">
-                <button class="button is-dark" type="submit">Corrigir prova</button>
+                <button id="submit-attempt" class="button is-dark" type="button">Corrigir prova</button>
+
                 <a class="button is-light" href="/exam.php?id=<?= urlencode($examId) ?>">Limpar respostas</a>
             </div>
         </form>
@@ -341,3 +302,74 @@ include __DIR__ . '/templates/layout/header.php';
 <?php endif; ?>
 
 <?php include __DIR__ . '/templates/layout/footer.php'; ?>
+
+<script>
+    (function () {
+        const form = document.getElementById('exam-form');
+        const btn = document.getElementById('submit-attempt');
+        if (!form || !btn) return;
+
+        const examId = <?= json_encode($examId) ?>;
+
+        btn.addEventListener('click', async function () {
+            btn.disabled = true;
+
+            try {
+                const payload = {
+                    examId: examId,
+                    examTitle: <?= json_encode((string)($exam['title'] ?? 'Prova')) ?>,
+                    answers: []
+                };
+
+                <?php foreach ($questions as $index => $q): ?>
+                {
+                    const fieldName = 'answer_' + <?= (int)$index ?>;
+                    const questionType = <?= json_encode((string)$q['type']) ?>;
+                    let value = '';
+
+                    <?php if ($q['type'] === 'multiple_choice'): ?>
+                    const checked = form.querySelector('input[name="' + fieldName + '"]:checked');
+                    value = checked ? checked.value : '';
+                    <?php else: ?>
+                    const input = form.querySelector('input[name="' + fieldName + '"]');
+                    value = input ? input.value : '';
+                    <?php endif; ?>
+
+                    const correct = <?= json_encode((string) $q['correct_answer'] ?? '') ?>;
+                    const isCorrect = correct !== '' && value !== '' && String(value).toLowerCase() === String(correct).toLowerCase();
+
+                    payload.answers.push({
+                        questionId: <?= json_encode((string)$q['question_id']) ?>,
+                        userAnswer: value,
+                        correctAnswer: correct,
+                        isCorrect: isCorrect
+                    });
+                }
+                <?php endforeach; ?>
+
+                const res = await fetch('/api/submit_attempt.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json().catch(() => null);
+
+                if (!res.ok || !data || !data.ok) {
+                    const msg = (data && data.error) ? data.error : 'Erro ao salvar tentativa.';
+                    alert(msg);
+                    return;
+                }
+
+                alert('Tentativa salva! ID: ' + data.attemptId);
+                // Reload para atualizar UI (corrigir prova/exibir feedback)
+                window.location.href = '/exam.php?id=' + encodeURIComponent(examId);
+            } catch (e) {
+                alert('Erro: ' + (e && e.message ? e.message : String(e)));
+            } finally {
+                btn.disabled = false;
+            }
+        });
+    })();
+</script>
+
