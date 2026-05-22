@@ -55,14 +55,20 @@ final class AuthService
     public static function requireLogin(): void
     {
         if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
+            // Se headers já foram enviados, iniciar sessão também pode falhar.
+            // Usamos @ para evitar warnings e ainda assim manter o fluxo.
+            @session_start();
         }
 
         if (empty($_SESSION['user'])) {
-            header('Location: /login.php');
+            if (!headers_sent()) {
+                header('Location: /login.php');
+            }
             exit;
         }
     }
+
+
 
     public static function user(): ?array
     {
